@@ -35,11 +35,17 @@
     ],
     "win": {
       "target": [
-        "nsis",
-        "portable"
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
       ],
       "icon": "assets/icon.png",
-      "artifactName": "${productName}-v${version}.${ext}"
+      "artifactName": "${productName}-v${version}-portable.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -49,7 +55,8 @@
       "installerHeaderIcon": "assets/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "极简Markdown编辑器"
+      "shortcutName": "极简Markdown编辑器",
+      "artifactName": "${productName}-v${version}-setup.${ext}"
     }
   },
   "devDependencies": {

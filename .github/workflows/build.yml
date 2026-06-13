@@ -40,7 +40,7 @@ jobs:
 
             | File | Description |
             |------|-------------|
-            | `极简Markdown编辑器-v版本号.exe` | Installer (recommended) — creates desktop shortcut |
+            | `极简Markdown编辑器-v版本号-setup.exe` | Installer (recommended) — creates desktop shortcut |
             | `极简Markdown编辑器-v版本号-portable.exe` | Portable — extract and run, no install needed |
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
