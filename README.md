@@ -24,7 +24,7 @@
 
 ### 下载安装
 
-从 [Releases 页面](https://github.com/yibanyiban78/MD-editor/releases) 下载最新版本的安装包或便携版：
+从 [Releases 页面](https://github.com/yibanyiban78/markdown-editor/releases) 下载最新版本的安装包或便携版：
 
 - **安装版**（推荐）：`极简Markdown编辑器-v版本号.exe`，双击安装，会创建桌面快捷方式和开始菜单
 - **便携版**（Portable）：`极简Markdown编辑器-v版本号-portable.exe`，解压即用，无需安装
@@ -40,8 +40,8 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/yibanyiban78/MD-editor.git
-cd MD-editor
+git clone https://github.com/yibanyiban78/markdown-editor.git
+cd markdown-editor
 
 # 安装依赖
 npm install
