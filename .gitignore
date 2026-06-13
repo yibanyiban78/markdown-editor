@@ -3,3 +3,5 @@ release/
 .DS_Store
 *.log
 debug.log
+
+*.exe
