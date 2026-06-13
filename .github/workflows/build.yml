@@ -1,0 +1,43 @@
+name: 构建和发布
+
+on:
+  push:
+    tags:
+      - 'v*'          # 推送 v1.0.0, v1.0.1 等标签时自动构建
+  workflow_dispatch:  # 允许手动触发构建
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 安装依赖
+        run: npm install
+
+      - name: 编译并打包
+        run: npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 创建 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.exe
+          generate_release_notes: true
+          body: |
+            ## 下载
+
+            下载 `极简Markdown编辑器-v版本号.exe`，双击安装即可使用。
+
+            ### 更新内容
+            ${{ github.event.head_commit.message }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
