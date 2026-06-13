@@ -22,17 +22,26 @@
 
 ## 开始使用
 
-### 环境要求
+### 下载安装
+
+从 [Releases 页面](https://github.com/yibanyiban78/MD-editor/releases) 下载最新版本的安装包或便携版：
+
+- **安装版**（推荐）：`极简Markdown编辑器-v版本号.exe`，双击安装，会创建桌面快捷方式和开始菜单
+- **便携版**（Portable）：`极简Markdown编辑器-v版本号-portable.exe`，解压即用，无需安装
+
+### 从源码构建
+
+#### 环境要求
 
 - [Node.js](https://nodejs.org/) >= 18
 - npm
 
-### 安装
+#### 安装
 
 ```bash
 # 克隆项目
-git clone https://github.com/<your-username>/markdown-editor.git
-cd markdown-editor
+git clone https://github.com/yibanyiban78/MD-editor.git
+cd MD-editor
 
 # 安装依赖
 npm install
@@ -44,7 +53,7 @@ npm start
 ### 构建可执行文件
 
 ```bash
-# 方式一：build.ps1（建议，国内网络友好）
+# 方式一：build.ps1（手动构建，国内网络友好）
 # 在 PowerShell 中执行：
 .\build.ps1
 
@@ -52,9 +61,9 @@ npm start
 npm run dist
 ```
 
-构建产物位于 `release/Markdown-editor-win32-x64/` 目录，直接运行 `MarkdownEditor.exe` 即可。
+构建产物位于 `release/` 目录。
 
-> **注意**：`electron-builder` 在 Windows 上需要从 GitHub 下载签名工具。如果网络受限，使用 `build.ps1` 脚本。
+> **提示**：GitHub Actions 已配置自动构建。推送 `v*` 标签（如 `v1.0.0`）到 GitHub 后，Actions 会自动编译并发布到 Releases 页面，用户可直接下载安装包。
 
 ## 项目结构
 
