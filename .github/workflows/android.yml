@@ -41,11 +41,24 @@ jobs:
           npx cap init 极简Markdown编辑器 com.armd.markdowneditor --web-dir src
           npx cap add android
 
+      - name: Fix Gradle repositories (Maven Central mirror)
+        run: |
+          python3 -c "
+import re
+with open('android/build.gradle', 'r') as f:
+    c = f.read()
+# Add Aliyun mirror before mavenCentral (Maven Central blocks GitHub Actions)
+c = c.replace('mavenCentral()', \"maven { url 'https://maven.aliyun.com/repository/public' }\\n        mavenCentral()\")
+with open('android/build.gradle', 'w') as f:
+    f.write(c)
+print('Repositories updated successfully')
+"
+
       - name: Build APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --no-daemon -Dorg.gradle.jvmargs="-Xmx2g"
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
 
