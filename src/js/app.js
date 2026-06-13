@@ -75,14 +75,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const file = files[0];
     if (file && (file.name.endsWith('.md') || file.name.endsWith('.markdown'))) {
-      // Electron 扩展了 File 对象，提供 file.path
-      const filePath = file.path;
-      if (filePath) {
+      // Electron: 使用 file.path 通过 IPC 读取
+      // Web: 直接使用 FileReader
+      const filePath = file.path; // Electron 特有
+      if (filePath && window.electronAPI.readFile) {
         const result = await window.electronAPI.readFile(filePath);
         if (result) {
           Editor.setContent(result.content, result.fileName, result.filePath);
           document.getElementById('status-text').textContent = `已打开: ${result.fileName}`;
           setTimeout(() => { document.getElementById('status-text').textContent = '就绪'; }, 2000);
+        }
+      } else {
+        // Web 回落：直接读取 File 对象
+        try {
+          const content = await file.text();
+          const fileId = 'web_' + file.name + '_' + Date.now();
+          localStorage.setItem(fileId + '_name', file.name);
+          Editor.setContent(content, file.name, fileId);
+          document.getElementById('status-text').textContent = `已打开: ${file.name}`;
+          setTimeout(() => { document.getElementById('status-text').textContent = '就绪'; }, 2000);
+        } catch (err) {
+          document.getElementById('status-text').textContent = '打开失败';
         }
       }
     }
