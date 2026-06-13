@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; img-src 'self' data: file: https:; font-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;">
+  <title>极简Markdown编辑器 V1.0.1</title>
+  <meta name="generator" content="dev-20260613">
+  <!-- theme.css 必须最先加载，包含 CSS 变量定义 -->
+  <link rel="stylesheet" href="styles/theme.css">
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/editor.css">
+</head>
+<body>
+  <!-- 工具栏 -->
+  <div id="toolbar">
+    <div class="toolbar-group">
+      <button id="btn-open-file" title="打开文件">📂</button>
+      <button id="btn-new-file" title="新建文件">📄</button>
+      <button id="btn-save" title="保存" style="display:none">💾</button>
+    </div>
+    <div class="toolbar-group">
+      <button id="btn-mode-single" class="active" title="预览">预览</button>
+      <button id="btn-mode-split" title="双模">⬅ 双模</button>
+      <button id="btn-mode-source" title="源码">源码</button>
+    </div>
+    <div class="toolbar-group">
+      <button id="btn-search" title="搜索">🔍</button>
+      <button id="btn-export" title="导出">📤</button>
+    </div>
+    <div class="toolbar-group">
+      <button id="btn-font-plus" title="放大字体">A+</button>
+      <button id="btn-font-minus" title="缩小字体">A−</button>
+    </div>
+    <div class="toolbar-group">
+      <button id="btn-outline" title="大纲 (Ctrl+Shift+O)">📑</button>
+      <button id="btn-theme" title="切换主题">🌙</button>
+      <button id="btn-settings" title="设置">⚙️</button>
+    </div>
+    <span id="file-name-display" class="file-name"></span>
+  </div>
+
+  <!-- 主体区域 -->
+  <div id="main-container">
+    <!-- 编辑区 -->
+    <div id="editor-container">
+      <!-- 欢迎页（无内容时显示） -->
+      <div id="welcome-screen">
+        <div class="welcome-icon">📝</div>
+        <h1>欢迎使用极简Markdown编辑器</h1>
+        <p class="welcome-subtitle">轻量 · 快速 · 所见即所得</p>
+
+        <div class="welcome-sections">
+          <div class="welcome-section">
+            <h3>🚀 快速开始</h3>
+            <ul>
+              <li>点击工具栏 <strong>📂</strong> 打开一个 .md 文件</li>
+              <li>点击 <strong>📄</strong> 新建空白文档</li>
+              <li>直接将 .md 文件拖拽到窗口中</li>
+              <li>使用 <strong>Ctrl+O</strong> 快速打开文件</li>
+            </ul>
+          </div>
+
+          <div class="welcome-section">
+            <h3>⌨️ 快捷键</h3>
+            <table class="shortcut-table">
+              <tr><td><kbd>Ctrl</kbd> + <kbd>N</kbd></td><td>新建文件</td></tr>
+              <tr><td><kbd>Ctrl</kbd> + <kbd>O</kbd></td><td>打开文件</td></tr>
+              <tr><td><kbd>Ctrl</kbd> + <kbd>S</kbd></td><td>保存文件</td></tr>
+              <tr><td><kbd>Ctrl</kbd> + <kbd>F</kbd></td><td>搜索</td></tr>
+              <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>O</kbd></td><td>切换大纲面板</td></tr>
+              <tr><td><kbd>Escape</kbd></td><td>关闭搜索栏</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- 预览模式：纯预览 -->
+      <div id="editor-single" class="editor-pane">
+        <div id="single-preview" class="preview-area"></div>
+      </div>
+
+      <!-- 双栏模式：左预览 右源码 -->
+      <div id="editor-split" class="editor-pane hidden">
+        <div id="preview-pane" class="split-pane"></div>
+        <textarea id="source-textarea" class="split-pane" spellcheck="false"></textarea>
+      </div>
+
+      <!-- 源码模式 -->
+      <div id="editor-source" class="editor-pane hidden">
+        <textarea id="source-full" class="source-full" spellcheck="false"></textarea>
+      </div>
+    </div>
+
+    <!-- 大纲面板（默认隐藏） -->
+    <div id="outline-panel" class="panel hidden">
+      <div class="panel-header">
+        <span>📑 大纲</span>
+        <button id="btn-close-outline" class="panel-close">✕</button>
+      </div>
+      <div id="outline-content"></div>
+    </div>
+  </div>
+
+  <!-- 搜索框 -->
+  <div id="search-bar" class="hidden">
+    <input type="text" id="search-input" placeholder="搜索...">
+    <span id="search-count"></span>
+    <button id="search-prev">▲</button>
+    <button id="search-next">▼</button>
+    <button id="search-close">✕</button>
+  </div>
+
+  <!-- 状态栏 -->
+  <div id="status-bar">
+    <span id="status-text">就绪</span>
+    <span id="word-count">字数: 0</span>
+  </div>
+
+  <!-- CDN 库 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <!-- 自定义脚本 -->
+  <script src="js/theme.js"></script>
+  <script src="js/preview.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/outline.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
