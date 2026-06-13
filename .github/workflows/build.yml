@@ -1,43 +1,44 @@
-name: 构建和发布
+name: Build and Release
 
 on:
   push:
     tags:
-      - 'v*'          # 推送 v1.0.0, v1.0.1 等标签时自动构建
-  workflow_dispatch:  # 允许手动触发构建
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-      - name: 检出代码
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 安装 Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: 安装依赖
+      - name: Install dependencies
         run: npm install
 
-      - name: 编译并打包
+      - name: Build with electron-builder
+        # 不加 GH_TOKEN，避免 electron-builder 尝试自行发布 Release
         run: npm run dist
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 创建 Release
+      - name: Upload artifacts to Release
         uses: softprops/action-gh-release@v2
         with:
           files: release/*.exe
           generate_release_notes: true
           body: |
-            ## 下载
+            ## Download
 
-            下载 `极简Markdown编辑器-v版本号.exe`，双击安装即可使用。
+            Download the installer below and double-click to install.
 
-            ### 更新内容
-            ${{ github.event.head_commit.message }}
+            | File | Description |
+            |------|-------------|
+            | `极简Markdown编辑器-v版本号.exe` | Installer — creates desktop shortcut |
+            | `极简Markdown编辑器-v版本号-portable.exe` | Portable — extract and run, no install needed |
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
