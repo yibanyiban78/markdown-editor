@@ -12,10 +12,10 @@
 
 <p align="center">
   <a href="https://github.com/yibanyiban78/markdown-editor/releases/latest">
-    <img src="https://img.shields.io/github/v/release/yibanyiban78/markdown-editor?style=flat-square&label=最新版本" alt="最新版本">
+    <img src="https://img.shields.io/github/v/release/yibanyiban78/markdown-editor?style=flat-square&label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC" alt="最新版本">
   </a>
   <a href="https://github.com/yibanyiban78/markdown-editor/releases">
-    <img src="https://img.shields.io/github/downloads/yibanyiban78/markdown-editor/total?style=flat-square&label=下载次数" alt="下载">
+    <img src="https://img.shields.io/github/downloads/yibanyiban78/markdown-editor/total?style=flat-square&label=%E4%B8%8B%E8%BD%BD%E6%AC%A1%E6%95%B0" alt="下载">
   </a>
   <a href="https://github.com/yibanyiban78/markdown-editor/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="MIT License">
