@@ -26,6 +26,10 @@
 
 ## 📸 预览
 
+| 浅色预览模式 | 暗色双栏编辑模式 |
+|:--------:|:-----------:|
+| ![](assets/screenshot-preview.png) | ![](assets/screenshot-split.png) |
+
 *按住 Ctrl+O 打开 .md 文件，即刻开始编辑。*
 
 ---
