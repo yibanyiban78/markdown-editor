@@ -178,6 +178,7 @@ markdown-editor/
 
 ---
 
-## 📄 许可证
+## 📄 许可证 & 隐私
 
-[MIT](LICENSE) © yibanyiban78
+- [MIT](LICENSE) © yibanyiban78
+- [隐私政策](PRIVACY.md)
