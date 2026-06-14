@@ -94,9 +94,15 @@ const ExportManager = {
     th, td { border: 1px solid #ddd; padding: 6px 12px; }
     blockquote { border-left: 3px solid #0071e3; padding-left: 12px; color: #666; margin: 0.5em 0; }
     .task-list-item { list-style: none; }
+    .powered-by { margin-top: 40px; padding-top: 16px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999; }
+    .powered-by a { color: #0071e3; text-decoration: none; }
   </style>
 </head>
-<body>${rendered}</body>
+<body>${rendered}
+  <div class="powered-by">
+    使用 <a href="https://github.com/yibanyiban78/markdown-editor" target="_blank">极简Markdown编辑器</a> 制作 · 开源免费
+  </div>
+</body>
 </html>`;
 
     // 通过 Electron IPC 调用保存对话框，实际写入文件

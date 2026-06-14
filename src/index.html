@@ -48,8 +48,8 @@
       <!-- 欢迎页（无内容时显示） -->
       <div id="welcome-screen">
         <div class="welcome-icon">📝</div>
-        <h1>欢迎使用极简Markdown编辑器</h1>
-        <p class="welcome-subtitle">轻量 · 快速 · 所见即所得</p>
+        <h1>极简Markdown编辑器</h1>
+        <p class="welcome-subtitle">轻量 · 快速 · 所见即所得 · 开源免费</p>
 
         <div class="welcome-sections">
           <div class="welcome-section">
@@ -60,6 +60,11 @@
               <li>直接将 .md 文件拖拽到窗口中</li>
               <li>使用 <strong>Ctrl+O</strong> 快速打开文件</li>
             </ul>
+            <div style="margin-top:12px;padding:8px 0;border-top:1px solid var(--border-color);">
+              <button id="btn-open-sample" class="welcome-btn" title="打开示例文档，体验全部功能">
+                📖 打开示例文档
+              </button>
+            </div>
           </div>
 
           <div class="welcome-section">
@@ -73,6 +78,25 @@
               <tr><td><kbd>Escape</kbd></td><td>关闭搜索栏</td></tr>
             </table>
           </div>
+
+          <div class="welcome-section welcome-features">
+            <h3>✨ 功能特色</h3>
+            <ul>
+              <li>🔤 <strong>语法高亮</strong> — 支持 190+ 编程语言</li>
+              <li>📐 <strong>数学公式</strong> — KaTeX 行内/独立公式</li>
+              <li>📊 <strong>图表绘制</strong> — Mermaid 流程图/时序图/甘特图</li>
+              <li>🌙 <strong>深色/浅色主题</strong> — 一键切换，自动记忆</li>
+              <li>📑 <strong>大纲面板</strong> — 自动提取目录，点击跳转</li>
+              <li>📤 <strong>导出 HTML/PDF</strong> — 方便分享</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="welcome-footer">
+          <span>⭐ 开源免费 · </span>
+          <a href="https://github.com/yibanyiban78/markdown-editor" target="_blank" class="welcome-link">GitHub</a>
+          <span> · 欢迎 Star ⭐</span>
+          <span class="welcome-version">v1.0.1</span>
         </div>
       </div>
       <!-- 预览模式：纯预览 -->

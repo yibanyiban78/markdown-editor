@@ -15,6 +15,121 @@ const Editor = {
     this.bindContentEvents();
     this.loadSettings();
     this.updateWelcomeVisibility();
+    this.bindSampleButton();
+  },
+
+  bindSampleButton() {
+    const btn = document.getElementById('btn-open-sample');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        // 使用 fetch(兼容 Electron file:// 协议) 读取示例文档
+        fetch('示例文档.md')
+          .then(r => r.text())
+          .then(content => {
+            this.setContent(content, '示例文档.md');
+            this.switchMode('single');
+          })
+          .catch(() => {
+            // 回落方案：内嵌默认示例内容
+            this.setContent(this.getSampleContent(), '示例文档.md');
+            this.switchMode('single');
+          });
+      });
+    }
+  },
+
+  getSampleContent() {
+    return `# 极简Markdown编辑器 — 使用示例
+
+## 欢迎！🎉
+
+这是一份功能展示文档，帮助你快速了解编辑器的所有能力。
+
+---
+
+## 文字排版
+
+**粗体** · *斜体* · ~~删除线~~ · \`行内代码\` · [链接](https://github.com/yibanyiban78/markdown-editor)
+
+> 这是一段引用文字。引用可以嵌套，用于强调或引用他人内容。
+
+有序列表：
+1. 第一项
+2. 第二项
+3. 第三项
+
+无序列表：
+- 苹果
+- 香蕉
+- 草莓
+
+任务列表：
+- [x] 已完成任务
+- [ ] 未完成任务
+
+---
+
+## 代码高亮 ⚡
+
+\`\`\`javascript
+function hello() {
+  console.log("Hello, Markdown!");
+}
+\`\`\`
+
+\`\`\`python
+def fibonacci(n):
+    a, b = 0, 1
+    for _ in range(n):
+        print(a, end=' ')
+        a, b = b, a + b
+\`\`\`
+
+---
+
+## 数学公式 📐
+
+行内公式：$E = mc^2$
+
+独立公式：
+
+$$\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
+
+---
+
+## Mermaid 图表 📊
+
+\`\`\`mermaid
+flowchart LR
+    A[开始] --> B{判断}
+    B -- 是 --> C[执行]
+    B -- 否 --> D[结束]
+\`\`\`
+
+\`\`\`mermaid
+sequenceDiagram
+    Alice->>Bob: 你好吗？
+    Bob-->>Alice: 我很好！
+\`\`\`
+
+---
+
+## 表格
+
+| 功能 | 支持情况 | 说明 |
+|------|---------|------|
+| 语法高亮 | ✅ | 190+ 语言 |
+| 数学公式 | ✅ | KaTeX 引擎 |
+| 图表 | ✅ | Mermaid |
+| 导出 HTML | ✅ | 带水印 |
+| 导出 PDF | ✅ | 浏览器打印 |
+
+---
+
+> ✨ **提示**：按 \`Ctrl+O\` 打开自己的 .md 文件，按 \`Ctrl+S\` 保存。
+>
+> 本项目开源免费，欢迎 Star ⭐ → [GitHub 仓库](https://github.com/yibanyiban78/markdown-editor)
+`;
   },
 
   updateWelcomeVisibility() {
