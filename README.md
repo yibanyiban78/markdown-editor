@@ -26,12 +26,6 @@
 
 ## 📸 预览
 
-> *（截图待补充 — 可以用截图工具截取软件界面后放入 `assets/screenshot.png`）*
-
-| 预览模式 | 双栏编辑模式 |
-|:--------:|:-----------:|
-| ![](assets/screenshot-preview.png) | ![](assets/screenshot-split.png) |
-
 *按住 Ctrl+O 打开 .md 文件，即刻开始编辑。*
 
 ---
