@@ -71,10 +71,5 @@
     "electron": "^28.3.3",
     "electron-builder": "^24.13.0",
     "electron-packager": "^17.1.2"
-  },
-  "dependencies": {
-    "@capacitor/android": "^8.4.0",
-    "@capacitor/cli": "^8.4.0",
-    "@capacitor/core": "^8.4.0"
   }
 }
