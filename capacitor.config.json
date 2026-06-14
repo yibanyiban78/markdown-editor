@@ -1,0 +1,18 @@
+{
+  "appId": "com.armd.markdowneditor",
+  "appName": "极简Markdown编辑器",
+  "webDir": "src",
+  "bundledWebRuntime": false,
+  "server": {
+    "allowNavigation": [
+      "cdnjs.cloudflare.com",
+      "cdn.jsdelivr.net"
+    ]
+  },
+  "android": {
+    "buildOptions": {
+      "keystorePath": null,
+      "keystoreAlias": null
+    }
+  }
+}

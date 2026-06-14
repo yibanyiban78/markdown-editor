@@ -14,6 +14,7 @@ permissions:
 
 jobs:
   build:
+    if: ${{ !endsWith(github.ref_name, '-android') }}
     runs-on: windows-latest
 
     steps:
