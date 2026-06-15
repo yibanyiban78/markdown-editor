@@ -43,14 +43,38 @@ jobs:
           body: |
             ## v1.0.2
 
-            This release hardens Markdown rendering and Electron file access, fixes data-loss risks around unsaved documents and auto-save, moves all runtime libraries offline, and rebuilds HTML/PDF export.
+            ### 中文
+
+            此版本重点增强 Markdown 渲染与 Electron 文件访问安全，修复未保存文档和自动保存可能导致的数据丢失问题，将运行时前端依赖改为本地打包，并重新设计 HTML/PDF 导出流程。
+
+            #### 下载
+
+            | 文件 | 说明 |
+            |------|------|
+            | `*-setup.exe` | **安装版（推荐）**：提供安装向导并创建桌面快捷方式 |
+            | `*-portable.exe` | **便携版**：无需安装，可直接运行 |
+
+            #### 更新亮点
+
+            - 使用 DOMPurify 净化不可信 Markdown 生成的 HTML。
+            - 限制 Electron IPC 文件访问，渲染进程不能读取任意本地路径。
+            - 增加未保存内容保护，并修复自动保存竞态问题。
+            - 将 marked、KaTeX、Mermaid、highlight.js 和 DOMPurify 本地打包。
+            - 重新设计 HTML 与 PDF 导出，生成干净、独立的文档。
+            - 升级 Electron 和构建依赖；依赖安全审计结果为 0 个漏洞。
+
+            ### English
+
+            This release hardens Markdown rendering and Electron file access, fixes data-loss risks around unsaved documents and auto-save, bundles all frontend runtime libraries locally, and redesigns HTML/PDF export.
+
+            #### Downloads
 
             | File | Description |
             |------|-------------|
-            | `极简Markdown编辑器-v1.0.2-setup.exe` | Installer (recommended) — creates desktop shortcut |
-            | `极简Markdown编辑器-v1.0.2-portable.exe` | Portable — no installation required |
+            | `*-setup.exe` | **Installer (recommended)**: includes a setup wizard and desktop shortcut |
+            | `*-portable.exe` | **Portable build**: runs directly without installation |
 
-            ### Highlights
+            #### Highlights
 
             - Sanitize untrusted Markdown and restrict Electron IPC file access.
             - Protect unsaved documents and fix auto-save race conditions.
