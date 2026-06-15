@@ -1,13 +1,19 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+function subscribe(channel, callback) {
+  if (typeof callback !== 'function') return () => {};
+  const listener = (event, data) => callback(data);
+  ipcRenderer.on(channel, listener);
+  return () => ipcRenderer.removeListener(channel, listener);
+}
+
 contextBridge.exposeInMainWorld('electronAPI', {
   openFile: () => ipcRenderer.invoke('dialog:openFile'),
-  openFolder: () => ipcRenderer.invoke('dialog:openFolder'),
-  readDir: (dirPath) => ipcRenderer.invoke('fs:readDir', dirPath),
-  readFile: (filePath) => ipcRenderer.invoke('fs:readFile', filePath),
   saveFile: (data) => ipcRenderer.invoke('dialog:saveFile', data),
-  saveDirect: (data) => ipcRenderer.invoke('fs:saveFile', data),
-  exportPDF: () => ipcRenderer.invoke('export:pdf'),
+  saveDirect: (data) => ipcRenderer.invoke('fs:saveDocument', data),
+  exportPDF: (htmlContent) => ipcRenderer.invoke('export:pdf', htmlContent),
   exportHTML: (htmlContent) => ipcRenderer.invoke('export:html', htmlContent),
-  onOpenFileFromArg: (callback) => ipcRenderer.on('app:openFileFromArg', (event, data) => callback(data))
+  confirmClose: () => ipcRenderer.send('app:confirmClose'),
+  onOpenFileFromArg: (callback) => subscribe('app:openFileFromArg', callback),
+  onRequestClose: (callback) => subscribe('app:requestClose', callback)
 });

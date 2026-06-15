@@ -10,6 +10,7 @@
 #preview-pane blockquote, #single-preview blockquote { border-left: 3px solid var(--accent); padding-left: 12px; margin: 0.5em 0; color: var(--text-secondary); }
 #preview-pane code, #single-preview code { background: var(--code-bg); padding: 2px 6px; border-radius: 3px; font-family: "Cascadia Code", "Consolas", monospace; font-size: 0.9em; }
 #preview-pane pre, #single-preview pre { background: var(--code-bg); padding: 0; border-radius: 6px; overflow-x: auto; margin: 0.5em 0; }
+#preview-pane pre.code-block, #single-preview pre.code-block { position: relative; }
 #preview-pane pre code, #single-preview pre code { background: none; padding: 16px; display: block; overflow-x: auto; }
 #preview-pane table, #single-preview table { border-collapse: collapse; margin: 0.5em 0; width: 100%; }
 #preview-pane th, #single-preview th, #preview-pane td, #single-preview td { border: 1px solid var(--border-color); padding: 6px 12px; text-align: left; }
@@ -70,6 +71,19 @@
   margin: 0.5em 0;
   overflow-x: auto;
   overflow-y: hidden;
+}
+.math-error { color: #b42318; font-family: "Cascadia Code", "Consolas", monospace; }
+.empty-preview { color: var(--text-tertiary); text-align: center; padding: 40px; }
+.image-load-error { border: 1px dashed var(--border-color); padding: 10px; }
+
+/* 导出时用于离屏完成 Mermaid/KaTeX 渲染，完成后立即移除。 */
+.markdown-export {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 860px;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* ===== 搜索高亮 ===== */

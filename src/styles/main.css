@@ -269,3 +269,18 @@ body.drag-over #editor-container::before {
   cursor: pointer; font-size: 13px; background: var(--toolbar-bg); color: var(--text-primary);
 }
 .modal-actions .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
+.modal-description { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
+.export-options { display: grid; gap: 8px; margin-bottom: 16px; }
+.export-option {
+  display: grid !important;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.export-option.selected { border-color: var(--accent); background: var(--active-bg); }
+.export-option input { margin: 0 !important; }
+.export-option span { font-size: 12px; color: var(--text-secondary); }

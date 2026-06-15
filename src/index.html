@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; img-src 'self' data: file: https:; font-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;">
-  <title>极简Markdown编辑器 V1.0.1</title>
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file: https:; font-src 'self' data:; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none';">
+  <title>极简Markdown编辑器 V1.0.2</title>
   <meta name="generator" content="dev-20260613">
   <!-- theme.css 必须最先加载，包含 CSS 变量定义 -->
   <link rel="stylesheet" href="styles/theme.css">
@@ -96,7 +96,7 @@
           <span>⭐ 开源免费 · </span>
           <a href="https://github.com/yibanyiban78/markdown-editor" target="_blank" class="welcome-link">GitHub</a>
           <span> · 欢迎 Star ⭐</span>
-          <span class="welcome-version">v1.0.1</span>
+          <span class="welcome-version">v1.0.2</span>
         </div>
       </div>
       <!-- 预览模式：纯预览 -->
@@ -141,13 +141,14 @@
     <span id="word-count">字数: 0</span>
   </div>
 
-  <!-- CDN 库 -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <!-- 本地依赖，保证离线可用并避免运行时 CDN 供应链风险 -->
+  <link rel="stylesheet" href="vendor/highlight-github.min.css">
+  <link rel="stylesheet" href="vendor/katex.min.css">
+  <script src="vendor/highlight.min.js"></script>
+  <script src="vendor/marked.umd.js"></script>
+  <script src="vendor/purify.min.js"></script>
+  <script src="vendor/katex.min.js"></script>
+  <script src="vendor/mermaid.min.js"></script>
   <!-- 自定义脚本 -->
   <script src="js/theme.js"></script>
   <script src="js/preview.js"></script>

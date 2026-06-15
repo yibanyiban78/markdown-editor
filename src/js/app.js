@@ -8,10 +8,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 通过文件关联/命令行打开文件
   if (typeof window.electronAPI !== 'undefined' && window.electronAPI.onOpenFileFromArg) {
-    window.electronAPI.onOpenFileFromArg((data) => {
-      Editor.setContent(data.content, data.fileName, data.filePath);
-      document.getElementById('status-text').textContent = `已打开: ${data.fileName}`;
-      setTimeout(() => { document.getElementById('status-text').textContent = '就绪'; }, 2000);
+    window.electronAPI.onOpenFileFromArg(async (data) => {
+      await Editor.openExternalDocument(data);
+    });
+  }
+
+  if (typeof window.electronAPI !== 'undefined' && window.electronAPI.onRequestClose) {
+    window.electronAPI.onRequestClose(() => {
+      Editor.requestClose();
     });
   }
 
@@ -23,7 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (e.ctrlKey && e.key === 's') {
       e.preventDefault();
-      if (!Editor.autoSaveEnabled || !Editor.currentFilePath) {
+      if (!Editor.autoSaveEnabled || !Editor.currentDocumentId || Editor.isDirty) {
         Editor.saveFile();
       }
     }
@@ -73,19 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const files = e.dataTransfer.files;
     if (files.length === 0) return;
 
-    const file = files[0];
-    if (file && (file.name.endsWith('.md') || file.name.endsWith('.markdown'))) {
-      // Electron 扩展了 File 对象，提供 file.path
-      const filePath = file.path;
-      if (filePath) {
-        const result = await window.electronAPI.readFile(filePath);
-        if (result) {
-          Editor.setContent(result.content, result.fileName, result.filePath);
-          document.getElementById('status-text').textContent = `已打开: ${result.fileName}`;
-          setTimeout(() => { document.getElementById('status-text').textContent = '就绪'; }, 2000);
-        }
-      }
-    }
+    await Editor.openDroppedFile(files[0]);
   });
 
   document.getElementById('status-text').textContent = '就绪';

@@ -1,157 +1,249 @@
 const MarkdownRenderer = {
-  /**
-   * 渲染 Markdown 为 HTML（同步处理大部分内容）
-   */
-  render(markdownText) {
-    if (!markdownText || markdownText.trim() === '') {
-      return '<p style="color: var(--text-tertiary); text-align: center; padding: 40px;">暂无内容</p>';
+  sanitizeHtml(html, allowGeneratedStyles = false) {
+    if (typeof DOMPurify === 'undefined') {
+      return this.escapeHtml(html);
     }
 
-    // Step 1: marked 解析 Markdown → HTML
-    let html;
-    if (typeof marked !== 'undefined') {
-      html = marked.parse(markdownText, { breaks: true, gfm: true });
-    } else {
-      html = `<pre>${this.escapeHtml(markdownText)}</pre>`;
-      return html;
-    }
+    const options = {
+      USE_PROFILES: { html: true, mathMl: true },
+      FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'video', 'audio'],
+      ALLOW_DATA_ATTR: true
+    };
+    if (!allowGeneratedStyles) options.FORBID_ATTR = ['style'];
 
-    // Step 2: KaTeX 数学公式（在字符串层面替换）
-    if (typeof katex !== 'undefined') {
-      // 独立公式 $$...$$
-      html = html.replace(/\$\$(.+?)\$\$/gs, (_, formula) => {
-        try {
-          return katex.renderToString(formula.trim(), {
-            displayMode: true,
-            throwOnError: false
-          });
-        } catch (e) {
-          return `<code style="color:var(--md-code-color);background:var(--code-bg);padding:4px 8px;border-radius:4px;">$$\n${this.escapeHtml(formula)}\n$$</code>`;
-        }
-      });
-      // 行内公式 $...$
-      html = html.replace(/\$(.+?)\$/g, (_, formula) => {
-        try {
-          return katex.renderToString(formula.trim(), {
-            displayMode: false,
-            throwOnError: false
-          });
-        } catch (e) {
-          return `<code style="color:var(--md-code-color);background:var(--code-bg);padding:2px 4px;border-radius:3px;">$${this.escapeHtml(formula)}$</code>`;
-        }
-      });
-    }
+    const cleanHtml = DOMPurify.sanitize(html, options);
 
-    // Step 3: 代码块处理（添加语言标签 + highlight.js 高亮）
-    html = this.processCodeBlocks(html);
+    const container = document.createElement('div');
+    container.innerHTML = cleanHtml;
 
-    return html;
+    container.querySelectorAll('a').forEach((link) => {
+      const href = link.getAttribute('href') || '';
+      const isAllowed = href.startsWith('#') ||
+        /^https?:\/\//i.test(href) ||
+        /^mailto:/i.test(href);
+
+      if (!isAllowed) {
+        link.removeAttribute('href');
+        link.removeAttribute('target');
+        return;
+      }
+
+      if (/^https?:\/\//i.test(href)) {
+        link.setAttribute('target', '_blank');
+        link.setAttribute('rel', 'noopener noreferrer');
+      }
+    });
+
+    container.querySelectorAll('img').forEach((image) => {
+      const src = image.getAttribute('src') || '';
+      if (/^\s*(javascript|vbscript):/i.test(src)) {
+        image.removeAttribute('src');
+      }
+      image.removeAttribute('srcset');
+    });
+
+    return container.innerHTML;
   },
 
-  /**
-   * 处理代码块：添加语言标签、语法高亮
-   */
-  processCodeBlocks(html) {
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
+  render(markdownText) {
+    if (!markdownText || markdownText.trim() === '') {
+      return '<p class="empty-preview">暂无内容</p>';
+    }
 
-    tempDiv.querySelectorAll('pre').forEach((pre) => {
-      const code = pre.querySelector('code');
+    if (typeof marked === 'undefined' || typeof DOMPurify === 'undefined') {
+      return `<pre>${this.escapeHtml(markdownText)}</pre>`;
+    }
+
+    const parsedHtml = marked.parse(markdownText, { breaks: true, gfm: true });
+    const container = document.createElement('div');
+    container.innerHTML = this.sanitizeHtml(parsedHtml);
+
+    this.processMath(container);
+    this.processCodeBlocks(container);
+
+    return this.sanitizeHtml(container.innerHTML, true);
+  },
+
+  processMath(container) {
+    if (typeof katex === 'undefined') return;
+
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+    const textNodes = [];
+    let node;
+
+    while ((node = walker.nextNode())) {
+      const parent = node.parentElement;
+      if (!parent || parent.closest('pre, code, .katex, .mermaid')) continue;
+      if (node.textContent.includes('$')) textNodes.push(node);
+    }
+
+    const formulaPattern = /\$\$([\s\S]+?)\$\$|\$([^$\n]+?)\$/g;
+
+    textNodes.forEach((textNode) => {
+      const text = textNode.textContent;
+      let cursor = 0;
+      let match;
+      let changed = false;
+      const fragment = document.createDocumentFragment();
+
+      formulaPattern.lastIndex = 0;
+      while ((match = formulaPattern.exec(text)) !== null) {
+        changed = true;
+        if (match.index > cursor) {
+          fragment.appendChild(document.createTextNode(text.slice(cursor, match.index)));
+        }
+
+        const formula = match[1] || match[2] || '';
+        const displayMode = Boolean(match[1]);
+        const wrapper = document.createElement(displayMode ? 'div' : 'span');
+        wrapper.className = displayMode ? 'math-display' : 'math-inline';
+
+        try {
+          const renderedFormula = katex.renderToString(formula.trim(), {
+            displayMode,
+            throwOnError: false,
+            strict: 'warn',
+            trust: false
+          });
+          const template = document.createElement('template');
+          template.innerHTML = renderedFormula;
+          wrapper.appendChild(template.content);
+        } catch {
+          wrapper.className = 'math-error';
+          wrapper.textContent = match[0];
+        }
+
+        fragment.appendChild(wrapper);
+        cursor = match.index + match[0].length;
+      }
+
+      if (!changed) return;
+      if (cursor < text.length) {
+        fragment.appendChild(document.createTextNode(text.slice(cursor)));
+      }
+      textNode.replaceWith(fragment);
+    });
+  },
+
+  processCodeBlocks(container) {
+    container.querySelectorAll('pre').forEach((pre) => {
+      const code = pre.querySelector(':scope > code');
       if (!code) return;
 
-      // 识别语言
-      let lang = '';
-      const classAttr = code.getAttribute('class') || '';
-      const match = classAttr.match(/language-(\w+)/);
-      if (match) lang = match[1];
+      let language = '';
+      const className = code.getAttribute('class') || '';
+      const match = className.match(/language-([\w-]+)/);
+      if (match) language = match[1];
 
-      // 应用 highlight.js 高亮
-      if (typeof hljs !== 'undefined' && lang) {
+      if (typeof hljs !== 'undefined' && language && language !== 'mermaid') {
         try {
-          code.innerHTML = hljs.highlight(code.textContent, { language: lang, ignoreIllegals: true }).value;
+          code.innerHTML = hljs.highlight(code.textContent, {
+            language,
+            ignoreIllegals: true
+          }).value;
           code.classList.add('hljs');
-        } catch (e) {
-          // 回退：自动检测
-          try {
-            const result = hljs.highlightAuto(code.textContent);
-            code.innerHTML = result.value;
-            code.classList.add('hljs');
-            if (!lang) lang = result.language;
-          } catch (e2) {}
+        } catch {
+          code.textContent = code.textContent;
         }
       }
 
-      // 给 <pre> 加样式包装
-      pre.style.position = 'relative';
+      pre.classList.add('code-block');
+      if (language === 'mermaid') return;
 
-      // 创建代码块头部（语言标签 + 复制按钮）
       const header = document.createElement('div');
       header.className = 'code-block-header';
 
-      const langLabel = document.createElement('span');
-      langLabel.className = 'code-lang-label';
-      langLabel.textContent = lang || 'code';
-      header.appendChild(langLabel);
+      const languageLabel = document.createElement('span');
+      languageLabel.className = 'code-lang-label';
+      languageLabel.textContent = language || 'code';
 
-      const copyBtn = document.createElement('button');
-      copyBtn.className = 'code-copy-btn';
-      copyBtn.textContent = '📋 复制';
-      copyBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        navigator.clipboard.writeText(code.textContent).then(() => {
-          copyBtn.textContent = '✅ 已复制';
-          setTimeout(() => { copyBtn.textContent = '📋 复制'; }, 2000);
-        });
-      });
-      header.appendChild(copyBtn);
+      const copyButton = document.createElement('button');
+      copyButton.type = 'button';
+      copyButton.className = 'code-copy-btn';
+      copyButton.textContent = '复制';
 
+      header.append(languageLabel, copyButton);
       pre.insertBefore(header, pre.firstChild);
     });
-
-    return tempDiv.innerHTML;
   },
 
-  /**
-   * 后处理：在 HTML 插入到 DOM 后执行（Mermaid 需要真实 DOM）
-   */
-  postRender(container) {
-    // Mermaid 图表
+  async postRender(container) {
+    this.bindCopyButtons(container);
+
     if (typeof mermaid !== 'undefined') {
-      mermaid.initialize({ startOnLoad: false, theme: 'default' });
-      container.querySelectorAll('.language-mermaid').forEach((block) => {
-        try {
-          const id = 'mermaid-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
-          const div = document.createElement('div');
-          div.className = 'mermaid';
-          div.id = id;
-          div.textContent = block.textContent;
-          // 替换 pre>code 为 mermaid div
-          const pre = block.closest('pre');
-          if (pre) {
-            pre.replaceWith(div);
-          } else {
-            block.replaceWith(div);
-          }
-          mermaid.run({ nodes: [div] });
-        } catch (e) {
-          // ignore mermaid errors
-        }
+      mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: 'strict',
+        htmlLabels: false,
+        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default'
       });
+
+      const blocks = Array.from(container.querySelectorAll('.language-mermaid'));
+      for (const block of blocks) {
+        const diagram = document.createElement('div');
+        diagram.className = 'mermaid';
+        diagram.id = `mermaid-${crypto.randomUUID()}`;
+        diagram.textContent = block.textContent;
+
+        const pre = block.closest('pre');
+        if (pre) pre.replaceWith(diagram);
+        else block.replaceWith(diagram);
+
+        try {
+          await mermaid.run({ nodes: [diagram], suppressErrors: true });
+        } catch {
+          diagram.classList.add('mermaid-error');
+          diagram.textContent = 'Mermaid 图表语法错误';
+        }
+      }
     }
 
-    // 图片懒加载检测
-    container.querySelectorAll('img').forEach((img) => {
-      img.addEventListener('error', () => {
-        img.style.border = '1px dashed var(--border-color)';
-        img.style.padding = '10px';
-        img.alt = `[图片加载失败: ${img.alt || img.src}]`;
+    container.querySelectorAll('img').forEach((image) => {
+      image.addEventListener('error', () => {
+        image.classList.add('image-load-error');
+        image.alt = `[图片加载失败: ${image.alt || image.src}]`;
+      }, { once: true });
+    });
+  },
+
+  bindCopyButtons(container) {
+    container.querySelectorAll('.code-copy-btn').forEach((button) => {
+      button.addEventListener('click', async (event) => {
+        event.stopPropagation();
+        const code = button.closest('pre')?.querySelector('code');
+        if (!code) return;
+
+        try {
+          await navigator.clipboard.writeText(code.textContent);
+          button.textContent = '已复制';
+          setTimeout(() => { button.textContent = '复制'; }, 2000);
+        } catch {
+          button.textContent = '复制失败';
+          setTimeout(() => { button.textContent = '复制'; }, 2000);
+        }
       });
     });
+  },
+
+  async renderForExport(markdownText) {
+    const container = document.createElement('article');
+    container.className = 'markdown-export';
+    container.innerHTML = this.render(markdownText);
+    document.body.appendChild(container);
+
+    try {
+      await this.postRender(container);
+      container.querySelectorAll('.code-block-header').forEach((header) => header.remove());
+      container.querySelectorAll('button').forEach((button) => button.remove());
+      return container.innerHTML;
+    } finally {
+      container.remove();
+    }
   },
 
   escapeHtml(text) {
     const div = document.createElement('div');
-    div.textContent = text;
+    div.textContent = String(text);
     return div.innerHTML;
   }
 };

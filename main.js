@@ -1,203 +1,305 @@
-const { app, BrowserWindow, dialog, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+const { pathToFileURL } = require('url');
+
+const MAX_MARKDOWN_BYTES = 20 * 1024 * 1024;
+const documents = new Map();
 
 let mainWindow;
-let currentFilePath = null;
 let pendingFilePath = null;
+let allowWindowClose = false;
 
-/** 从命令行参数中提取文件路径 */
-function getFilePathFromArgv() {
-  // process.argv: [exe路径, ...asar参数?, 文件路径]
-  // 过滤掉 Electron 内部参数，取第一个看起来像文件路径的 .md 参数
-  for (const arg of process.argv) {
-    if (arg.endsWith('.md') || arg.endsWith('.markdown')) {
-      if (fs.existsSync(arg)) return arg;
+function isMarkdownPath(filePath) {
+  const extension = path.extname(filePath || '').toLowerCase();
+  return extension === '.md' || extension === '.markdown' || extension === '.txt';
+}
+
+function getFilePathFromArgv(argv = process.argv) {
+  for (const arg of argv) {
+    if (typeof arg === 'string' && isMarkdownPath(arg) && fs.existsSync(arg)) {
+      return path.resolve(arg);
     }
   }
   return null;
 }
 
+async function readMarkdownDocument(filePath) {
+  const resolvedPath = path.resolve(filePath);
+  if (!isMarkdownPath(resolvedPath)) {
+    throw new Error('Unsupported file type');
+  }
+
+  const stats = await fs.promises.stat(resolvedPath);
+  if (!stats.isFile() || stats.size > MAX_MARKDOWN_BYTES) {
+    throw new Error('File is too large or is not a regular file');
+  }
+
+  const documentId = crypto.randomUUID();
+  const content = await fs.promises.readFile(resolvedPath, 'utf8');
+  documents.set(documentId, resolvedPath);
+
+  return {
+    documentId,
+    content,
+    fileName: path.basename(resolvedPath)
+  };
+}
+
+async function sendFileToRenderer(filePath) {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+
+  try {
+    const documentData = await readMarkdownDocument(filePath);
+    mainWindow.webContents.send('app:openFileFromArg', documentData);
+  } catch (error) {
+    dialog.showErrorBox('无法打开文件', error.message);
+  }
+}
+
+function isTrustedSender(event) {
+  return mainWindow &&
+    !mainWindow.isDestroyed() &&
+    event.sender === mainWindow.webContents;
+}
+
+function getDocumentPath(documentId) {
+  if (typeof documentId !== 'string') return null;
+  return documents.get(documentId) || null;
+}
+
+function isSafeExternalUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' ||
+      parsed.protocol === 'http:' ||
+      parsed.protocol === 'mailto:';
+  } catch {
+    return false;
+  }
+}
+
+function configureNavigationSecurity(window) {
+  const appPageUrl = pathToFileURL(path.join(__dirname, 'src', 'index.html')).href;
+
+  window.webContents.setWindowOpenHandler(({ url }) => {
+    if (isSafeExternalUrl(url)) {
+      shell.openExternal(url);
+    }
+    return { action: 'deny' };
+  });
+
+  window.webContents.on('will-navigate', (event, url) => {
+    if (url === appPageUrl || url.startsWith(`${appPageUrl}#`)) return;
+    event.preventDefault();
+    if (isSafeExternalUrl(url)) {
+      shell.openExternal(url);
+    }
+  });
+
+  window.webContents.session.setPermissionRequestHandler((webContents, permission, callback) => {
+    callback(false);
+  });
+
+  window.webContents.session.on('will-download', (event) => {
+    event.preventDefault();
+  });
+}
+
 function createWindow() {
-  // 构建时：resources/ = app.asar + assets/ + preload.js
-  const resourcesPath = process.resourcesPath;
+  const iconPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'assets', 'icon.png')
+    : path.join(__dirname, 'assets', 'icon.png');
+
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    icon: path.join(resourcesPath, 'assets', 'icon.png'),
+    icon: iconPath,
     webPreferences: {
-      preload: path.join(resourcesPath, 'preload.js'),
+      preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      sandbox: true
     }
   });
 
   mainWindow.maximize();
   mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
-
-  // 移除默认菜单栏
   Menu.setApplicationMenu(null);
+  configureNavigationSecurity(mainWindow);
 
-  // 页面加载完成后，处理命令行传入的文件
   mainWindow.webContents.on('did-finish-load', () => {
     if (pendingFilePath) {
-      try {
-        const content = fs.readFileSync(pendingFilePath, 'utf-8');
-        mainWindow.webContents.send('app:openFileFromArg', {
-          filePath: pendingFilePath,
-          fileName: path.basename(pendingFilePath),
-          content
-        });
-      } catch (e) {
-        console.error('无法打开文件:', e.message);
-      }
+      const filePath = pendingFilePath;
       pendingFilePath = null;
+      sendFileToRenderer(filePath);
     }
+  });
+
+  mainWindow.on('close', (event) => {
+    if (allowWindowClose) return;
+    event.preventDefault();
+    mainWindow.webContents.send('app:requestClose');
+  });
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+    documents.clear();
   });
 }
 
-app.whenReady().then(() => {
-  // 请求单实例锁（确保文件关联打开时复用已有窗口）
-  const gotLock = app.requestSingleInstanceLock();
-  if (!gotLock) {
-    app.quit();
-    return;
-  }
-  // 检查命令行是否有待打开的文件
-  pendingFilePath = getFilePathFromArgv();
-  createWindow();
-});
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, argv) => {
+    if (!mainWindow) return;
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+
+    const filePath = getFilePathFromArgv(argv);
+    if (filePath) sendFileToRenderer(filePath);
+  });
+
+  app.whenReady().then(() => {
+    pendingFilePath = getFilePathFromArgv();
+    createWindow();
+  });
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow();
-});
-
-// Windows: 当已运行的实例再次被调用时（文件关联打开）
-app.on('second-instance', (event, argv) => {
-  if (mainWindow) {
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.focus();
-    // 检查 argv 中是否有文件路径
-    for (const arg of argv) {
-      if ((arg.endsWith('.md') || arg.endsWith('.markdown')) && fs.existsSync(arg)) {
-        try {
-          const content = fs.readFileSync(arg, 'utf-8');
-          mainWindow.webContents.send('app:openFileFromArg', {
-            filePath: arg,
-            fileName: path.basename(arg),
-            content
-          });
-        } catch (e) {}
-        break;
-      }
-    }
+  if (BrowserWindow.getAllWindows().length === 0) {
+    allowWindowClose = false;
+    createWindow();
   }
 });
 
-// IPC: Open file dialog
-ipcMain.handle('dialog:openFile', async () => {
+ipcMain.handle('dialog:openFile', async (event) => {
+  if (!isTrustedSender(event)) return null;
+
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openFile'],
-    filters: [{ name: 'Markdown', extensions: ['md', 'markdown'] }]
+    filters: [{ name: 'Markdown', extensions: ['md', 'markdown', 'txt'] }]
   });
   if (result.canceled || result.filePaths.length === 0) return null;
-  const filePath = result.filePaths[0];
-  const content = fs.readFileSync(filePath, 'utf-8');
-  currentFilePath = filePath;
-  return { filePath, content, fileName: path.basename(filePath) };
-});
 
-// IPC: Open folder dialog
-ipcMain.handle('dialog:openFolder', async () => {
-  const result = await dialog.showOpenDialog(mainWindow, {
-    properties: ['openDirectory']
-  });
-  if (result.canceled || result.filePaths.length === 0) return null;
-  return { folderPath: result.filePaths[0] };
-});
-
-// IPC: Read folder contents
-ipcMain.handle('fs:readDir', async (event, dirPath) => {
   try {
-    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-    const files = [];
-    for (const entry of entries) {
-      if (entry.name.startsWith('.')) continue;
-      files.push({
-        name: entry.name,
-        path: path.join(dirPath, entry.name),
-        isDirectory: entry.isDirectory(),
-        isFile: entry.isFile()
+    return await readMarkdownDocument(result.filePaths[0]);
+  } catch (error) {
+    dialog.showErrorBox('无法打开文件', error.message);
+    return null;
+  }
+});
+
+ipcMain.handle('dialog:saveFile', async (event, data) => {
+  if (!isTrustedSender(event) || !data || typeof data.content !== 'string') {
+    return { success: false };
+  }
+
+  try {
+    let documentId = data.documentId;
+    let filePath = getDocumentPath(documentId);
+
+    if (!filePath) {
+      const result = await dialog.showSaveDialog(mainWindow, {
+        defaultPath: data.fileName || '未命名.md',
+        filters: [{ name: 'Markdown', extensions: ['md'] }]
       });
+      if (result.canceled || !result.filePath) return null;
+
+      filePath = result.filePath;
+      documentId = crypto.randomUUID();
+      documents.set(documentId, filePath);
     }
-    files.sort((a, b) => {
-      if (a.isDirectory && !b.isDirectory) return -1;
-      if (!a.isDirectory && b.isDirectory) return 1;
-      return a.name.localeCompare(b.name);
-    });
-    return files;
-  } catch { return []; }
+
+    await fs.promises.writeFile(filePath, data.content, 'utf8');
+    return {
+      success: true,
+      documentId,
+      fileName: path.basename(filePath)
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
 });
 
-// IPC: Read file content
-ipcMain.handle('fs:readFile', async (event, filePath) => {
-  try {
-    const content = fs.readFileSync(filePath, 'utf-8');
-    return { content, fileName: path.basename(filePath), filePath };
-  } catch { return null; }
-});
+ipcMain.handle('fs:saveDocument', async (event, data) => {
+  if (!isTrustedSender(event) || !data || typeof data.content !== 'string') {
+    return { success: false };
+  }
 
-// IPC: Save file (with dialog if no path)
-ipcMain.handle('dialog:saveFile', async (event, { content, filePath }) => {
-  try {
-    if (filePath) {
-      fs.writeFileSync(filePath, content, 'utf-8');
-      currentFilePath = filePath;
-      return { success: true, filePath, fileName: path.basename(filePath) };
-    }
-    const result = await dialog.showSaveDialog(mainWindow, {
-      filters: [{ name: 'Markdown', extensions: ['md'] }]
-    });
-    if (result.canceled) return null;
-    fs.writeFileSync(result.filePath, content, 'utf-8');
-    currentFilePath = result.filePath;
-    return { success: true, filePath: result.filePath, fileName: path.basename(result.filePath) };
-  } catch { return { success: false }; }
-});
+  const filePath = getDocumentPath(data.documentId);
+  if (!filePath) return { success: false, error: 'Document is not authorized' };
 
-// IPC: Save with existing path
-ipcMain.handle('fs:saveFile', async (event, { content, filePath }) => {
   try {
-    fs.writeFileSync(filePath, content, 'utf-8');
+    await fs.promises.writeFile(filePath, data.content, 'utf8');
     return { success: true };
-  } catch { return { success: false }; }
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
 });
 
-// IPC: Export PDF
-ipcMain.handle('export:pdf', async () => {
-  try {
-    const result = await dialog.showSaveDialog(mainWindow, {
-      filters: [{ name: 'PDF', extensions: ['pdf'] }]
-    });
-    if (result.canceled) return null;
-    const pdfData = await mainWindow.webContents.printToPDF({ printBackground: true });
-    fs.writeFileSync(result.filePath, pdfData);
-    return { success: true, filePath: result.filePath };
-  } catch { return { success: false }; }
-});
-
-// IPC: Export HTML
 ipcMain.handle('export:html', async (event, htmlContent) => {
+  if (!isTrustedSender(event) || typeof htmlContent !== 'string') {
+    return { success: false };
+  }
+
   try {
     const result = await dialog.showSaveDialog(mainWindow, {
       filters: [{ name: 'HTML', extensions: ['html'] }]
     });
-    if (result.canceled) return null;
-    fs.writeFileSync(result.filePath, htmlContent, 'utf-8');
-    return { success: true, filePath: result.filePath };
-  } catch { return { success: false }; }
+    if (result.canceled || !result.filePath) return null;
+    await fs.promises.writeFile(result.filePath, htmlContent, 'utf8');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('export:pdf', async (event, htmlContent) => {
+  if (!isTrustedSender(event) || typeof htmlContent !== 'string') {
+    return { success: false };
+  }
+
+  let printWindow;
+  try {
+    const result = await dialog.showSaveDialog(mainWindow, {
+      filters: [{ name: 'PDF', extensions: ['pdf'] }]
+    });
+    if (result.canceled || !result.filePath) return null;
+
+    printWindow = new BrowserWindow({
+      show: false,
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true,
+        javascript: false
+      }
+    });
+
+    const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`;
+    await printWindow.loadURL(dataUrl);
+    const pdfData = await printWindow.webContents.printToPDF({
+      printBackground: true,
+      preferCSSPageSize: true
+    });
+    await fs.promises.writeFile(result.filePath, pdfData);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  } finally {
+    if (printWindow && !printWindow.isDestroyed()) printWindow.destroy();
+  }
+});
+
+ipcMain.on('app:confirmClose', (event) => {
+  if (!isTrustedSender(event) || !mainWindow) return;
+  allowWindowClose = true;
+  mainWindow.close();
 });

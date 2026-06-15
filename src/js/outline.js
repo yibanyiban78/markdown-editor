@@ -1,4 +1,6 @@
 const OutlineManager = {
+  userVisible: false,
+
   init() {
     document.getElementById('btn-close-outline').addEventListener('click', () => this.hide());
     document.getElementById('btn-outline').addEventListener('click', () => this.toggle());
@@ -9,18 +11,19 @@ const OutlineManager = {
   },
 
   show() {
+    this.userVisible = true;
     document.getElementById('outline-panel').classList.remove('hidden');
   },
 
   hide() {
+    this.userVisible = false;
     document.getElementById('outline-panel').classList.add('hidden');
   },
 
   toggle() {
     const panel = document.getElementById('outline-panel');
     if (panel.classList.contains('hidden')) {
-      this.update(Editor.currentContent);
-      this.show();
+      if (this.update(Editor.currentContent)) this.show();
     } else {
       this.hide();
     }
@@ -30,7 +33,10 @@ const OutlineManager = {
     const content = document.getElementById('outline-content');
     content.innerHTML = '';
 
-    if (!markdownContent) return;
+    if (!markdownContent) {
+      this.hide();
+      return false;
+    }
 
     const headingRegex = /^(#{1,3})\s+(.+)$/gm;
     let match;
@@ -52,11 +58,12 @@ const OutlineManager = {
       content.appendChild(item);
     }
 
-    if (hasHeadings) {
-      this.show();
-    } else {
+    if (!hasHeadings) {
       this.hide();
+    } else if (this.userVisible) {
+      document.getElementById('outline-panel').classList.remove('hidden');
     }
+    return hasHeadings;
   },
 
   /**

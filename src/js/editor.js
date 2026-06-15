@@ -1,11 +1,14 @@
 const Editor = {
   currentMode: 'single',   // 'single' | 'split' | 'source'
   currentContent: '',
-  currentFilePath: null,
+  currentDocumentId: null,
   currentFileName: '',
+  hasOpenDocument: false,
   isDirty: false,
   autoSaveEnabled: true,
   autoSaveTimer: null,
+  revision: 0,
+  documentGeneration: 0,
   scrollRatio: 0,           // 0~1，记录当前滚动比例
   _splitSyncing: false,     // 防止双模同步死循环
 
@@ -21,19 +24,10 @@ const Editor = {
   bindSampleButton() {
     const btn = document.getElementById('btn-open-sample');
     if (btn) {
-      btn.addEventListener('click', () => {
-        // 使用 fetch(兼容 Electron file:// 协议) 读取示例文档
-        fetch('示例文档.md')
-          .then(r => r.text())
-          .then(content => {
-            this.setContent(content, '示例文档.md');
-            this.switchMode('single');
-          })
-          .catch(() => {
-            // 回落方案：内嵌默认示例内容
-            this.setContent(this.getSampleContent(), '示例文档.md');
-            this.switchMode('single');
-          });
+      btn.addEventListener('click', async () => {
+        if (!await this.prepareToReplaceDocument('打开示例文档')) return;
+        this.setContent(this.getSampleContent(), '示例文档.md', null);
+        this.switchMode('single');
       });
     }
   },
@@ -134,9 +128,8 @@ sequenceDiagram
 
   updateWelcomeVisibility() {
     const welcome = document.getElementById('welcome-screen');
-    const hasContent = this.currentContent && this.currentContent.trim() !== '';
 
-    if (hasContent) {
+    if (this.hasOpenDocument) {
       welcome.classList.add('hidden');
       const paneIds = ['editor-single', 'editor-split', 'editor-source'];
       paneIds.forEach(id => {
@@ -192,6 +185,7 @@ sequenceDiagram
   _handleInput(value) {
     this.currentContent = value;
     this.isDirty = true;
+    this.revision++;
     this.updatePreview(value);
     this.onContentChange();
   },
@@ -340,10 +334,15 @@ sequenceDiagram
     return this.currentContent;
   },
 
-  setContent(content, fileName, filePath) {
+  setContent(content, fileName, documentId) {
+    clearTimeout(this.autoSaveTimer);
+    this.autoSaveTimer = null;
+    this.documentGeneration++;
+    this.revision++;
     this.currentContent = content || '';
     this.currentFileName = fileName || '';
-    this.currentFilePath = filePath || null;
+    this.currentDocumentId = documentId || null;
+    this.hasOpenDocument = true;
 
     document.getElementById('file-name-display').textContent = this.currentFileName || '';
 
@@ -356,6 +355,7 @@ sequenceDiagram
     this.updateWordCount();
     if (typeof OutlineManager !== 'undefined') OutlineManager.update(this.currentContent);
     this.updateWelcomeVisibility();
+    this.updateSaveButtonVisibility();
   },
 
   updatePreview(markdownText) {
@@ -375,71 +375,132 @@ sequenceDiagram
     this.updateWordCount();
     if (typeof OutlineManager !== 'undefined') OutlineManager.update(this.currentContent);
 
-    if (this.autoSaveEnabled) {
+    if (this.autoSaveEnabled && this.currentDocumentId) {
       clearTimeout(this.autoSaveTimer);
       this.autoSaveTimer = setTimeout(() => this.autoSave(), 1500);
     }
   },
 
-  async autoSave() {
-    if (!this.currentFilePath || !this.isDirty) return;
+  async autoSave(silent = false) {
+    if (!this.currentDocumentId || !this.isDirty) return !this.isDirty;
+
+    clearTimeout(this.autoSaveTimer);
+    this.autoSaveTimer = null;
+    const revision = this.revision;
+    const generation = this.documentGeneration;
+    const documentId = this.currentDocumentId;
+    const content = this.currentContent;
+
     const result = await window.electronAPI.saveDirect({
-      content: this.currentContent,
-      filePath: this.currentFilePath
+      content,
+      documentId
     });
-    if (result && result.success) {
+
+    const isCurrentVersion = this.revision === revision &&
+      this.documentGeneration === generation &&
+      this.currentDocumentId === documentId;
+
+    if (result && result.success && isCurrentVersion) {
       this.isDirty = false;
-      document.getElementById('status-text').textContent = '已自动保存';
-      setTimeout(() => { document.getElementById('status-text').textContent = '就绪'; }, 2000);
+      if (!silent) this.showStatus('已自动保存');
+      return true;
+    }
+
+    if (result && result.success && this.currentDocumentId === documentId) {
+      this.scheduleAutoSave();
+    } else if (!silent) {
+      this.showStatus('自动保存失败');
+    }
+    return false;
+  },
+
+  scheduleAutoSave() {
+    if (!this.autoSaveEnabled || !this.currentDocumentId || !this.isDirty) return;
+    clearTimeout(this.autoSaveTimer);
+    this.autoSaveTimer = setTimeout(() => this.autoSave(), 1500);
+  },
+
+  async prepareToReplaceDocument(action) {
+    clearTimeout(this.autoSaveTimer);
+    this.autoSaveTimer = null;
+    if (!this.isDirty) return true;
+
+    if (this.autoSaveEnabled && this.currentDocumentId && await this.autoSave(true)) {
+      return true;
+    }
+
+    return window.confirm(`当前文档有未保存的修改。确定要${action}并放弃这些修改吗？`);
+  },
+
+  async requestClose() {
+    if (await this.prepareToReplaceDocument('关闭应用')) {
+      window.electronAPI.confirmClose();
     }
   },
 
-  newFile() {
-    this.currentContent = '';
-    this.currentFilePath = null;
-    this.currentFileName = '';
-    document.getElementById('file-name-display').textContent = '';
-    document.getElementById('source-textarea').value = '';
-    document.getElementById('source-full').value = '';
-    document.getElementById('preview-pane').innerHTML = '';
-    document.getElementById('single-preview').innerHTML = '';
-    this.isDirty = false;
-    this.updateWordCount();
-    this.updateWelcomeVisibility();
+  async newFile() {
+    if (!await this.prepareToReplaceDocument('新建文档')) return false;
+    this.setContent('', '', null);
+    this.switchMode('source');
+    return true;
   },
 
   async saveFile() {
+    const revision = this.revision;
+    const generation = this.documentGeneration;
     const result = await window.electronAPI.saveFile({
       content: this.currentContent,
-      filePath: this.currentFilePath
+      documentId: this.currentDocumentId,
+      fileName: this.currentFileName
     });
+
     if (result && result.success) {
-      this.currentFilePath = result.filePath;
+      this.currentDocumentId = result.documentId;
       this.currentFileName = result.fileName;
       document.getElementById('file-name-display').textContent = this.currentFileName;
-      this.isDirty = false;
-      document.getElementById('status-text').textContent = '已保存';
-      setTimeout(() => { document.getElementById('status-text').textContent = '就绪'; }, 2000);
+      this.updateSaveButtonVisibility();
+      this.isDirty = this.revision !== revision || this.documentGeneration !== generation;
+      this.showStatus('已保存');
+      if (this.isDirty) this.scheduleAutoSave();
+      return true;
     }
+    if (result && result.error) this.showStatus('保存失败');
+    return false;
   },
 
-  async openFile(filePath) {
-    if (filePath) {
-      const result = await window.electronAPI.readFile(filePath);
-      if (result) {
-        this.setContent(result.content, result.fileName, result.filePath);
-        document.getElementById('status-text').textContent = `已打开: ${result.fileName}`;
-        return true;
-      }
-    } else {
-      const result = await window.electronAPI.openFile();
-      if (result) {
-        this.setContent(result.content, result.fileName, result.filePath);
-        document.getElementById('status-text').textContent = `已打开: ${result.fileName}`;
-        return true;
-      }
+  async openFile() {
+    const result = await window.electronAPI.openFile();
+    if (!result) return false;
+    if (!await this.prepareToReplaceDocument('打开其他文档')) return false;
+
+    this.setContent(result.content, result.fileName, result.documentId);
+    this.showStatus(`已打开: ${result.fileName}`);
+    return true;
+  },
+
+  async openExternalDocument(data) {
+    if (!data || typeof data.content !== 'string') return false;
+    if (!await this.prepareToReplaceDocument('打开其他文档')) return false;
+
+    this.setContent(data.content, data.fileName, data.documentId || null);
+    this.showStatus(`已打开: ${data.fileName}`);
+    return true;
+  },
+
+  async openDroppedFile(file) {
+    if (!file || !/\.(md|markdown|txt)$/i.test(file.name)) return false;
+    if (file.size > 20 * 1024 * 1024) {
+      this.showStatus('文件过大，无法打开');
+      return false;
     }
-    return false;
+
+    const content = await file.text();
+    if (!await this.prepareToReplaceDocument('打开拖入的文档')) return false;
+
+    // 拖入文件不授予静默写回权限，首次保存时由系统保存对话框确认目标。
+    this.setContent(content, file.name, null);
+    this.showStatus(`已打开: ${file.name}`);
+    return true;
   },
 
   updateWordCount() {
@@ -470,7 +531,12 @@ sequenceDiagram
     root.style.setProperty('--editor-font-size', newSize + 'px');
 
     const saved = localStorage.getItem('editorSettings');
-    const settings = saved ? JSON.parse(saved) : {};
+    let settings = {};
+    try {
+      settings = saved ? JSON.parse(saved) : {};
+    } catch {
+      settings = {};
+    }
     settings.fontSize = newSize;
     localStorage.setItem('editorSettings', JSON.stringify(settings));
     document.getElementById('status-text').textContent = `字体: ${newSize}px`;
@@ -478,6 +544,16 @@ sequenceDiagram
   },
 
   updateSaveButtonVisibility() {
-    document.getElementById('btn-save').style.display = this.autoSaveEnabled ? 'none' : '';
+    const needsFirstSave = this.hasOpenDocument && !this.currentDocumentId;
+    document.getElementById('btn-save').style.display =
+      this.autoSaveEnabled && !needsFirstSave ? 'none' : '';
+  },
+
+  showStatus(message, duration = 2000) {
+    const status = document.getElementById('status-text');
+    status.textContent = message;
+    setTimeout(() => {
+      if (status.textContent === message) status.textContent = '就绪';
+    }, duration);
   }
 };

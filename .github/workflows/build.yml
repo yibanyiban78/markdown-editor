@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - 'v*'
+    branches:
+      - main
   workflow_dispatch:
 
 env:
@@ -14,6 +16,7 @@ permissions:
 
 jobs:
   build:
+    if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.event.head_commit.message, 'release: v1.0.2')
     runs-on: windows-latest
 
     steps:
@@ -35,15 +38,24 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: release/*.exe
+          tag_name: v1.0.2
           generate_release_notes: false
           body: |
-            ## Download
+            ## v1.0.2
 
-            Download the installer below and double-click to install.
+            This release hardens Markdown rendering and Electron file access, fixes data-loss risks around unsaved documents and auto-save, moves all runtime libraries offline, and rebuilds HTML/PDF export.
 
             | File | Description |
             |------|-------------|
-            | `极简Markdown编辑器-v版本号-setup.exe` | Installer (recommended) — creates desktop shortcut |
-            | `极简Markdown编辑器-v版本号-portable.exe` | Portable — extract and run, no install needed |
+            | `极简Markdown编辑器-v1.0.2-setup.exe` | Installer (recommended) — creates desktop shortcut |
+            | `极简Markdown编辑器-v1.0.2-portable.exe` | Portable — no installation required |
+
+            ### Highlights
+
+            - Sanitize untrusted Markdown and restrict Electron IPC file access.
+            - Protect unsaved documents and fix auto-save race conditions.
+            - Bundle Markdown, KaTeX, Mermaid, highlighting, and sanitization libraries locally.
+            - Export clean standalone HTML and document-only PDF files.
+            - Upgrade Electron and build dependencies; dependency audit reports zero vulnerabilities.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

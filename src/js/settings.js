@@ -63,13 +63,24 @@ const SettingsManager = {
 
       Editor.autoSaveEnabled = autoSave;
       Editor.updateSaveButtonVisibility();
+      if (autoSave) {
+        Editor.scheduleAutoSave();
+      } else {
+        clearTimeout(Editor.autoSaveTimer);
+        Editor.autoSaveTimer = null;
+      }
 
       this.outlinePosition = outlinePos;
       this.applyOutlinePosition();
 
       // 合并保存所有设置
       const existing = localStorage.getItem('editorSettings');
-      const settings = existing ? JSON.parse(existing) : {};
+      let settings = {};
+      try {
+        settings = existing ? JSON.parse(existing) : {};
+      } catch {
+        settings = {};
+      }
       settings.autoSave = autoSave;
       settings.outlinePosition = outlinePos;
       localStorage.setItem('editorSettings', JSON.stringify(settings));

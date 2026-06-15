@@ -45,7 +45,7 @@
 
 ### 文件管理
 - **打开/新建/保存**：支持 .md/.markdown/.txt 文件
-- **拖拽打开**：将文件拖入窗口即可
+- **拖拽打开**：将文件拖入窗口即可；首次保存时由系统确认保存位置
 - **自动保存**：修改后 1.5 秒自动存盘（可在设置中关闭）
 - **搜索功能**：支持全文搜索、匹配高亮、上下跳转
 
@@ -97,11 +97,7 @@ npm start
 ### 构建可执行文件
 
 ```bash
-# 方式一：build.ps1（手动构建，国内网络友好）
-# 在 PowerShell 中执行：
-.\build.ps1
-
-# 方式二：electron-builder
+# 使用 electron-builder
 npm run dist
 ```
 
@@ -131,12 +127,12 @@ markdown-editor/
 ├── main.js              # Electron 主进程
 ├── preload.js           # 预加载脚本（安全上下文桥接）
 ├── package.json         # 项目配置
-├── build.ps1            # 构建脚本
 ├── assets/
 │   ├── icon.png         # 应用图标（透明背景）
 │   └── icon.ico         # Windows 图标文件
 └── src/
     ├── index.html       # 应用入口页面
+    ├── vendor/          # 随应用打包的前端依赖
     ├── js/
     │   ├── app.js       # 应用初始化、快捷键、拖拽
     │   ├── editor.js    # 编辑器核心逻辑
@@ -158,7 +154,7 @@ markdown-editor/
 
 | 技术 | 用途 |
 |------|------|
-| Electron 28 | 桌面应用框架 |
+| Electron 42 | 桌面应用框架 |
 | marked | Markdown 解析引擎 |
 | highlight.js | 代码语法高亮（190+ 语言） |
 | KaTeX | 数学公式渲染 |
