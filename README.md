@@ -103,7 +103,7 @@ npm run dist
 
 构建产物位于 `release/` 目录。
 
-> **提示**：GitHub Actions 已配置自动构建。推送 `v*` 标签（如 `v1.0.1`）到 GitHub 后，Actions 会自动编译并发布到 Releases 页面，用户可直接下载安装包。
+> **提示**：GitHub Actions 已配置自动构建。推送 `v*` 标签（如 `v1.0.2`）到 GitHub 后，Actions 会自动编译并发布到 Releases 页面，用户可直接下载安装包。
 
 ---
 
