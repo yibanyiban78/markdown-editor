@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (typeof SearchManager !== 'undefined') SearchManager.init();
   if (typeof ExportManager !== 'undefined') ExportManager.init();
   if (typeof OutlineManager !== 'undefined') OutlineManager.init();
+  if (typeof UpdateManager !== 'undefined') UpdateManager.init();
   if (typeof SettingsManager !== 'undefined') SettingsManager.init();
 
   // 通过文件关联/命令行打开文件

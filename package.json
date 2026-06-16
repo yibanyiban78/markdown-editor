@@ -1,6 +1,6 @@
 {
   "name": "markdown-editor",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "极简Markdown编辑器",
   "main": "main.js",
   "scripts": {
@@ -20,6 +20,13 @@
     "directories": {
       "output": "release"
     },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "yibanyiban78",
+        "repo": "markdown-editor"
+      }
+    ],
     "files": [
       "main.js",
       "preload.js",
@@ -29,22 +36,29 @@
       {
         "from": "assets/",
         "to": "assets/",
-        "filter": ["*.png", "*.ico"]
+        "filter": [
+          "*.png",
+          "*.ico"
+        ]
       }
     ],
     "win": {
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "assets/icon.png",
-      "artifactName": "${productName}-v${version}-portable.${ext}"
+      "artifactName": "markdown-editor-portable-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -55,12 +69,12 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "极简Markdown编辑器",
-      "artifactName": "${productName}-v${version}-setup.${ext}"
+      "artifactName": "markdown-editor-setup-${version}.${ext}"
     }
   },
   "devDependencies": {
     "@highlightjs/cdn-assets": "11.11.1",
-    "dompurify": "3.4.0",
+    "dompurify": "3.4.10",
     "electron": "42.4.0",
     "electron-builder": "26.15.3",
     "jsdom": "29.1.1",
@@ -70,5 +84,8 @@
   },
   "overrides": {
     "uuid": "11.1.1"
+  },
+  "dependencies": {
+    "electron-updater": "6.8.9"
   }
 }

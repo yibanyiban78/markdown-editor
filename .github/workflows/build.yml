@@ -28,6 +28,13 @@ jobs:
         with:
           node-version: 22
 
+      - name: Read package version
+        id: package
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          "version=$version" >> $env:GITHUB_OUTPUT
+
       - name: Install dependencies
         run: npm install
 
@@ -37,15 +44,18 @@ jobs:
       - name: Upload artifacts to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: release/*.exe
-          tag_name: v1.0.3
+          files: |
+            release/*.exe
+            release/*.yml
+            release/*.blockmap
+          tag_name: v${{ steps.package.outputs.version }}
           generate_release_notes: false
           body: |
-            ## v1.0.3
+            ## v${{ steps.package.outputs.version }}
 
             ### 中文
 
-            此版本修复打开 Markdown 文件后大纲面板不会默认展开的问题。现在打开包含 H1-H3 标题的文档时，大纲会自动显示；没有标题的文档仍保持隐藏；如果用户在当前文档中手动关闭大纲，后续编辑更新不会再次强制弹出。
+            此版本加入基于 GitHub Releases 的新版本检测与自动更新能力。安装版启动后会自动检查新版本，也可以通过工具栏手动检查；发现更新后可下载新版安装包，并在确认没有未保存内容后重启安装。
 
             #### 下载
 
@@ -56,14 +66,15 @@ jobs:
 
             #### 更新亮点
 
-            - 打开本地文件、拖入文件、打开示例文档或通过命令行打开文件后，若文档包含标题，大纲默认展开。
-            - 没有标题的文档不会显示空大纲面板。
-            - 手动关闭大纲后，当前文档的普通编辑更新不会打断用户选择。
-            - 应用版本更新为 `1.0.3`。
+            - 新增启动后的后台版本检测。
+            - 新增工具栏“检查更新”入口。
+            - 发现新版本后可在应用内下载更新。
+            - 下载完成后会先检查未保存内容，再重启并安装更新。
+            - 发布流程会上传 `latest.yml` 和 `.blockmap`，供自动更新客户端识别最新安装包。
 
             ### English
 
-            This release fixes the outline panel not opening by default after a Markdown document is loaded. Documents with H1-H3 headings now show the outline automatically; documents without headings keep it hidden; and if the user closes the outline for the current document, normal editing updates do not force it open again.
+            This release adds GitHub Releases based update checking and automatic update support. The installed app checks for new versions in the background after startup, and users can also check manually from the toolbar. When an update is available, the app can download the new installer and restart to install it after unsaved work is handled.
 
             #### Downloads
 
@@ -74,9 +85,10 @@ jobs:
 
             #### Highlights
 
-            - Automatically show the outline after opening a local file, dropping a file, opening the sample document, or opening a file from the command line when headings are present.
-            - Keep the outline hidden for documents without headings.
-            - Respect manual outline closing during normal edits in the current document.
-            - Update the application version to `1.0.3`.
+            - Add background update checks after startup.
+            - Add a toolbar action for manual update checks.
+            - Allow users to download updates from inside the app.
+            - Before restarting to install an update, protect unsaved work.
+            - Upload `latest.yml` and `.blockmap` files in the release workflow so update clients can resolve the latest installer.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

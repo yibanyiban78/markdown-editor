@@ -63,6 +63,7 @@
 - **自动保存**：已授权文件在修改 1.5 秒后自动写回，可在设置中关闭
 - **未保存保护**：新建、打开其他文件或关闭窗口前提示保存未提交内容
 - **本地处理**：文档内容保留在本机，不上传到项目服务器
+- **自动更新**：安装版可通过 GitHub Releases 检测并下载新版本
 
 #### 安全与离线使用
 
@@ -92,7 +93,7 @@
 | `*-setup.exe` | **安装版，推荐**：提供安装向导并创建桌面快捷方式 |
 | `*-portable.exe` | **便携版**：无需安装，可直接运行 |
 
-当前稳定版本为 [`v1.0.3`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.0.3)。
+当前稳定版本为 [`v1.1.0`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.1.0)。
 
 ### 从源码运行
 
@@ -214,6 +215,7 @@ Press <kbd>Ctrl</kbd> + <kbd>O</kbd> to open a Markdown file and start editing.
 - **Auto-save**: authorized files are saved 1.5 seconds after editing; this can be disabled
 - **Unsaved-change protection**: prompts before creating, opening, or closing over pending work
 - **Local processing**: document contents remain on your computer and are not uploaded to a project server
+- **Automatic updates**: installed builds can check GitHub Releases and download new versions
 
 #### Security and offline operation
 
@@ -243,7 +245,7 @@ Download the latest build from the [Releases page](https://github.com/yibanyiban
 | `*-setup.exe` | **Installer, recommended**: includes a setup wizard and desktop shortcut |
 | `*-portable.exe` | **Portable build**: runs directly without installation |
 
-The current stable version is [`v1.0.3`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.0.3).
+The current stable version is [`v1.1.0`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.1.0).
 
 ### Run from source
 

@@ -13,7 +13,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveDirect: (data) => ipcRenderer.invoke('fs:saveDocument', data),
   exportPDF: (htmlContent) => ipcRenderer.invoke('export:pdf', htmlContent),
   exportHTML: (htmlContent) => ipcRenderer.invoke('export:html', htmlContent),
+  getUpdateStatus: () => ipcRenderer.invoke('updates:getStatus'),
+  checkForUpdates: (options) => ipcRenderer.invoke('updates:check', options),
+  downloadUpdate: () => ipcRenderer.invoke('updates:download'),
+  installUpdate: () => ipcRenderer.invoke('updates:install'),
   confirmClose: () => ipcRenderer.send('app:confirmClose'),
   onOpenFileFromArg: (callback) => subscribe('app:openFileFromArg', callback),
-  onRequestClose: (callback) => subscribe('app:requestClose', callback)
+  onRequestClose: (callback) => subscribe('app:requestClose', callback),
+  onUpdateStatus: (callback) => subscribe('updates:status', callback)
 });

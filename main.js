@@ -4,12 +4,30 @@ const fs = require('fs');
 const crypto = require('crypto');
 const { pathToFileURL } = require('url');
 
+let autoUpdater = null;
+try {
+  ({ autoUpdater } = require('electron-updater'));
+} catch {
+  autoUpdater = null;
+}
+
 const MAX_MARKDOWN_BYTES = 20 * 1024 * 1024;
+const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 const documents = new Map();
 
 let mainWindow;
 let pendingFilePath = null;
 let allowWindowClose = false;
+let updateCheckTimer = null;
+let updateState = {
+  status: 'idle',
+  manual: false,
+  version: app.getVersion(),
+  updateInfo: null,
+  error: null,
+  progress: null,
+  lastCheckedAt: null
+};
 
 function isMarkdownPath(filePath) {
   const extension = path.extname(filePath || '').toLowerCase();
@@ -107,6 +125,146 @@ function configureNavigationSecurity(window) {
   });
 }
 
+function getSafeUpdateInfo(info) {
+  if (!info) return null;
+  return {
+    version: info.version || '',
+    releaseDate: info.releaseDate || '',
+    releaseName: info.releaseName || '',
+    releaseNotes: info.releaseNotes || ''
+  };
+}
+
+function getUpdateState() {
+  return {
+    status: updateState.status,
+    manual: updateState.manual,
+    version: updateState.version,
+    updateInfo: updateState.updateInfo,
+    error: updateState.error,
+    progress: updateState.progress,
+    lastCheckedAt: updateState.lastCheckedAt
+  };
+}
+
+function isPortableBuild() {
+  return Boolean(process.env.PORTABLE_EXECUTABLE_DIR);
+}
+
+function setUpdateState(partial) {
+  updateState = { ...updateState, ...partial };
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('updates:status', getUpdateState());
+  }
+}
+
+function configureAutoUpdates() {
+  if (!autoUpdater) {
+    setUpdateState({ status: 'unavailable', error: 'Updater module is not installed' });
+    return;
+  }
+
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = false;
+
+  autoUpdater.on('checking-for-update', () => {
+    setUpdateState({
+      status: 'checking',
+      error: null,
+      progress: null,
+      lastCheckedAt: new Date().toISOString()
+    });
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    setUpdateState({
+      status: 'available',
+      updateInfo: getSafeUpdateInfo(info),
+      error: null,
+      progress: null
+    });
+  });
+
+  autoUpdater.on('update-not-available', (info) => {
+    setUpdateState({
+      status: 'not-available',
+      updateInfo: getSafeUpdateInfo(info),
+      error: null,
+      progress: null
+    });
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    setUpdateState({
+      status: 'downloading',
+      error: null,
+      progress: {
+        percent: Math.round(progress.percent || 0),
+        bytesPerSecond: progress.bytesPerSecond || 0,
+        transferred: progress.transferred || 0,
+        total: progress.total || 0
+      }
+    });
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    setUpdateState({
+      status: 'downloaded',
+      updateInfo: getSafeUpdateInfo(info),
+      error: null,
+      progress: null
+    });
+  });
+
+  autoUpdater.on('error', (error) => {
+    setUpdateState({
+      status: 'error',
+      error: error.message || 'Update check failed',
+      progress: null
+    });
+  });
+}
+
+async function checkForUpdates(manual = false) {
+  if (!app.isPackaged || isPortableBuild()) {
+    setUpdateState({
+      status: 'disabled',
+      manual,
+      error: null,
+      progress: null,
+      lastCheckedAt: new Date().toISOString()
+    });
+    return getUpdateState();
+  }
+
+  if (!autoUpdater) {
+    setUpdateState({ status: 'unavailable', manual, error: 'Updater module is not installed' });
+    return getUpdateState();
+  }
+
+  if (updateState.status === 'checking' || updateState.status === 'downloading') {
+    return getUpdateState();
+  }
+
+  setUpdateState({ manual, error: null });
+  try {
+    await autoUpdater.checkForUpdates();
+  } catch (error) {
+    setUpdateState({
+      status: 'error',
+      error: error.message || 'Update check failed',
+      progress: null
+    });
+  }
+  return getUpdateState();
+}
+
+function scheduleAutoUpdateChecks() {
+  if (!app.isPackaged || updateCheckTimer) return;
+  setTimeout(() => checkForUpdates(false), 10000);
+  updateCheckTimer = setInterval(() => checkForUpdates(false), UPDATE_CHECK_INTERVAL_MS);
+}
+
 function createWindow() {
   const iconPath = app.isPackaged
     ? path.join(process.resourcesPath, 'assets', 'icon.png')
@@ -164,11 +322,17 @@ if (!gotSingleInstanceLock) {
 
   app.whenReady().then(() => {
     pendingFilePath = getFilePathFromArgv();
+    configureAutoUpdates();
     createWindow();
+    scheduleAutoUpdateChecks();
   });
 }
 
 app.on('window-all-closed', () => {
+  if (updateCheckTimer) {
+    clearInterval(updateCheckTimer);
+    updateCheckTimer = null;
+  }
   if (process.platform !== 'darwin') app.quit();
 });
 
@@ -296,6 +460,43 @@ ipcMain.handle('export:pdf', async (event, htmlContent) => {
   } finally {
     if (printWindow && !printWindow.isDestroyed()) printWindow.destroy();
   }
+});
+
+ipcMain.handle('updates:getStatus', (event) => {
+  if (!isTrustedSender(event)) return getUpdateState();
+  return getUpdateState();
+});
+
+ipcMain.handle('updates:check', async (event, options = {}) => {
+  if (!isTrustedSender(event)) return getUpdateState();
+  return checkForUpdates(Boolean(options.manual));
+});
+
+ipcMain.handle('updates:download', async (event) => {
+  if (!isTrustedSender(event) || !autoUpdater || !app.isPackaged) return getUpdateState();
+  if (updateState.status !== 'available') return getUpdateState();
+
+  try {
+    setUpdateState({ status: 'downloading', error: null, progress: { percent: 0 } });
+    await autoUpdater.downloadUpdate();
+  } catch (error) {
+    setUpdateState({
+      status: 'error',
+      error: error.message || 'Update download failed',
+      progress: null
+    });
+  }
+  return getUpdateState();
+});
+
+ipcMain.handle('updates:install', (event) => {
+  if (!isTrustedSender(event) || !autoUpdater || updateState.status !== 'downloaded') {
+    return { success: false };
+  }
+
+  allowWindowClose = true;
+  setImmediate(() => autoUpdater.quitAndInstall(false, true));
+  return { success: true };
 });
 
 ipcMain.on('app:confirmClose', (event) => {
