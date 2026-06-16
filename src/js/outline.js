@@ -29,6 +29,11 @@ const OutlineManager = {
     }
   },
 
+  showForDocument(markdownContent) {
+    this.userVisible = true;
+    if (!this.update(markdownContent)) this.hide();
+  },
+
   update(markdownContent) {
     const content = document.getElementById('outline-content');
     content.innerHTML = '';

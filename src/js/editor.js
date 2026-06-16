@@ -353,7 +353,7 @@ sequenceDiagram
     this.updatePreview(content || '');
     this.isDirty = false;
     this.updateWordCount();
-    if (typeof OutlineManager !== 'undefined') OutlineManager.update(this.currentContent);
+    if (typeof OutlineManager !== 'undefined') OutlineManager.showForDocument(this.currentContent);
     this.updateWelcomeVisibility();
     this.updateSaveButtonVisibility();
   },
