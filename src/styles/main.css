@@ -166,8 +166,16 @@ body { display: flex; flex-direction: column; }
 .outline-item {
   padding: 3px 12px; cursor: pointer; color: var(--text-secondary);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  border-radius: 4px;
+  margin: 1px 6px;
 }
 .outline-item:hover { color: var(--accent); }
+.outline-item.active {
+  color: var(--accent);
+  background: var(--active-bg);
+  box-shadow: inset 3px 0 0 var(--accent);
+  font-weight: 600;
+}
 .outline-h1 { padding-left: 12px; font-weight: 600; }
 .outline-h2 { padding-left: 24px; }
 .outline-h3 { padding-left: 36px; font-size: 12px; }

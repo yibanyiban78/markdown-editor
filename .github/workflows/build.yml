@@ -55,7 +55,7 @@ jobs:
 
             ### 中文
 
-            此版本加入基于 GitHub Releases 的新版本检测与自动更新能力。安装版启动后会自动检查新版本，也可以通过工具栏手动检查；发现更新后可下载新版安装包，并在确认没有未保存内容后重启安装。
+            此版本增强了大纲导航体验：在不同工作模式下滚动文档时，大纲会自动高亮当前显示内容所属的章节标题，让长文档定位更直观。
 
             #### 下载
 
@@ -66,15 +66,14 @@ jobs:
 
             #### 更新亮点
 
-            - 新增启动后的后台版本检测。
-            - 新增工具栏“检查更新”入口。
-            - 发现新版本后可在应用内下载更新。
-            - 下载完成后会先检查未保存内容，再重启并安装更新。
-            - 发布流程会上传 `latest.yml` 和 `.blockmap`，供自动更新客户端识别最新安装包。
+            - 新增大纲当前章节自动高亮。
+            - 支持单栏预览、双栏编辑和源码编辑模式下的滚动章节识别。
+            - 优化重复标题场景下的大纲定位，点击和高亮会对应到正确章节。
+            - 切换工作模式或重新渲染预览后，大纲高亮会自动刷新。
 
             ### English
 
-            This release adds GitHub Releases based update checking and automatic update support. The installed app checks for new versions in the background after startup, and users can also check manually from the toolbar. When an update is available, the app can download the new installer and restart to install it after unsaved work is handled.
+            This release improves outline navigation. While scrolling documents in different work modes, the outline now automatically highlights the section currently shown in the editor or preview, making long documents easier to navigate.
 
             #### Downloads
 
@@ -85,10 +84,9 @@ jobs:
 
             #### Highlights
 
-            - Add background update checks after startup.
-            - Add a toolbar action for manual update checks.
-            - Allow users to download updates from inside the app.
-            - Before restarting to install an update, protect unsaved work.
-            - Upload `latest.yml` and `.blockmap` files in the release workflow so update clients can resolve the latest installer.
+            - Add automatic current-section highlighting in the outline.
+            - Support section detection in single preview, split editing, and source editing modes.
+            - Improve outline targeting when duplicate heading titles are present.
+            - Refresh the outline highlight after mode switches or preview re-renders.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

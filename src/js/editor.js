@@ -215,6 +215,7 @@ sequenceDiagram
       if (maxScroll > 0) {
         el.scrollTop = this.scrollRatio * maxScroll;
       }
+      if (typeof OutlineManager !== 'undefined') OutlineManager.requestActiveUpdate();
     });
   },
 
@@ -247,6 +248,7 @@ sequenceDiagram
       requestAnimationFrame(() => {
         this.syncSplitScrollToRatio();
         this.bindSplitScroll();
+        if (typeof OutlineManager !== 'undefined') OutlineManager.requestActiveUpdate();
       });
     } else if (mode === 'source') {
       document.getElementById('source-full').value = this.currentContent;
@@ -323,6 +325,7 @@ sequenceDiagram
     if (SearchManager && SearchManager.searchQuery) {
       setTimeout(() => SearchManager.updatePreviewHighlights(), 300);
     }
+    if (typeof OutlineManager !== 'undefined') OutlineManager.requestActiveUpdate();
   },
 
   getContent() {
@@ -369,6 +372,7 @@ sequenceDiagram
     if (SearchManager && SearchManager.searchQuery) {
       setTimeout(() => SearchManager.updatePreviewHighlights(), 300);
     }
+    if (typeof OutlineManager !== 'undefined') OutlineManager.requestActiveUpdate();
   },
 
   onContentChange() {
