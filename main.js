@@ -467,6 +467,11 @@ ipcMain.handle('updates:getStatus', (event) => {
   return getUpdateState();
 });
 
+ipcMain.handle('app:getVersion', (event) => {
+  if (!isTrustedSender(event)) return app.getVersion();
+  return app.getVersion();
+});
+
 ipcMain.handle('updates:check', async (event, options = {}) => {
   if (!isTrustedSender(event)) return getUpdateState();
   return checkForUpdates(Boolean(options.manual));

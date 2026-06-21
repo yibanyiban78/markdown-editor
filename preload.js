@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveDirect: (data) => ipcRenderer.invoke('fs:saveDocument', data),
   exportPDF: (htmlContent) => ipcRenderer.invoke('export:pdf', htmlContent),
   exportHTML: (htmlContent) => ipcRenderer.invoke('export:html', htmlContent),
+  getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
   getUpdateStatus: () => ipcRenderer.invoke('updates:getStatus'),
   checkForUpdates: (options) => ipcRenderer.invoke('updates:check', options),
   downloadUpdate: () => ipcRenderer.invoke('updates:download'),

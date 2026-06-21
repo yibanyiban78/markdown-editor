@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
+  await applyAppVersion();
+
   // Initialize all modules in order
   if (typeof Editor !== 'undefined') Editor.init();
   if (typeof SearchManager !== 'undefined') SearchManager.init();
@@ -83,3 +85,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('status-text').textContent = '就绪';
 });
+
+async function applyAppVersion() {
+  if (typeof window.electronAPI === 'undefined' || !window.electronAPI.getAppVersion) return;
+
+  try {
+    const version = await window.electronAPI.getAppVersion();
+    if (!version) return;
+
+    document.title = `极简Markdown编辑器 V${version}`;
+
+    const versionLabel = document.querySelector('.welcome-version');
+    if (versionLabel) versionLabel.textContent = `v${version}`;
+  } catch {
+    // Keep the static fallback title/version if the app version cannot be read.
+  }
+}

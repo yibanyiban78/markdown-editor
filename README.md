@@ -93,7 +93,7 @@
 | `*-setup.exe` | **安装版，推荐**：提供安装向导并创建桌面快捷方式 |
 | `*-portable.exe` | **便携版**：无需安装，可直接运行 |
 
-当前稳定版本为 [`v1.1.0`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.1.0)。
+当前稳定版本为 [`v1.1.1`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.1.1)。
 
 ### 从源码运行
 
@@ -245,7 +245,7 @@ Download the latest build from the [Releases page](https://github.com/yibanyiban
 | `*-setup.exe` | **Installer, recommended**: includes a setup wizard and desktop shortcut |
 | `*-portable.exe` | **Portable build**: runs directly without installation |
 
-The current stable version is [`v1.1.0`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.1.0).
+The current stable version is [`v1.1.1`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.1.1).
 
 ### Run from source
 
