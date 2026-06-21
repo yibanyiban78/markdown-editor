@@ -55,7 +55,7 @@ jobs:
 
             ### 中文
 
-            此版本增强了大纲导航体验：在不同工作模式下滚动文档时，大纲会自动高亮当前显示内容所属的章节标题，让长文档定位更直观。
+            此版本新增键盘快捷键，用于快速调整编辑器字体大小。现在可以直接通过键盘放大或缩小字体，不必再移动到工具栏按钮。
 
             #### 下载
 
@@ -66,14 +66,14 @@ jobs:
 
             #### 更新亮点
 
-            - 新增大纲当前章节自动高亮。
-            - 支持单栏预览、双栏编辑和源码编辑模式下的滚动章节识别。
-            - 优化重复标题场景下的大纲定位，点击和高亮会对应到正确章节。
-            - 切换工作模式或重新渲染预览后，大纲高亮会自动刷新。
+            - 新增 <kbd>Ctrl</kbd> + <kbd>=</kbd> 放大编辑器字体。
+            - 新增 <kbd>Ctrl</kbd> + <kbd>-</kbd> 缩小编辑器字体。
+            - 工具栏字体按钮提示和欢迎页快捷键表已同步更新。
+            - 字体大小仍会保存到本地设置，下次启动继续沿用。
 
             ### English
 
-            This release improves outline navigation. While scrolling documents in different work modes, the outline now automatically highlights the section currently shown in the editor or preview, making long documents easier to navigate.
+            This release adds keyboard shortcuts for quickly adjusting the editor font size. You can now increase or decrease the font directly from the keyboard without moving to the toolbar buttons.
 
             #### Downloads
 
@@ -84,9 +84,9 @@ jobs:
 
             #### Highlights
 
-            - Add automatic current-section highlighting in the outline.
-            - Support section detection in single preview, split editing, and source editing modes.
-            - Improve outline targeting when duplicate heading titles are present.
-            - Refresh the outline highlight after mode switches or preview re-renders.
+            - Add <kbd>Ctrl</kbd> + <kbd>=</kbd> to increase the editor font size.
+            - Add <kbd>Ctrl</kbd> + <kbd>-</kbd> to decrease the editor font size.
+            - Update toolbar hints and the welcome screen shortcut table.
+            - Font size is still saved locally and restored on the next launch.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

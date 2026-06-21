@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file: https:; font-src 'self' data:; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none';">
-  <title>极简Markdown编辑器 V1.1.1</title>
+  <title>极简Markdown编辑器 V1.1.2</title>
   <meta name="generator" content="dev-20260613">
   <!-- theme.css 必须最先加载，包含 CSS 变量定义 -->
   <link rel="stylesheet" href="styles/theme.css">
@@ -30,8 +30,8 @@
       <button id="btn-export" title="导出">📤</button>
     </div>
     <div class="toolbar-group">
-      <button id="btn-font-plus" title="放大字体">A+</button>
-      <button id="btn-font-minus" title="缩小字体">A−</button>
+      <button id="btn-font-plus" title="放大字体 (Ctrl+=)">A+</button>
+      <button id="btn-font-minus" title="缩小字体 (Ctrl+-)">A−</button>
     </div>
     <div class="toolbar-group">
       <button id="btn-outline" title="大纲 (Ctrl+Shift+O)">📑</button>
@@ -75,6 +75,8 @@
               <tr><td><kbd>Ctrl</kbd> + <kbd>O</kbd></td><td>打开文件</td></tr>
               <tr><td><kbd>Ctrl</kbd> + <kbd>S</kbd></td><td>保存文件</td></tr>
               <tr><td><kbd>Ctrl</kbd> + <kbd>F</kbd></td><td>搜索</td></tr>
+              <tr><td><kbd>Ctrl</kbd> + <kbd>=</kbd></td><td>放大字体</td></tr>
+              <tr><td><kbd>Ctrl</kbd> + <kbd>-</kbd></td><td>缩小字体</td></tr>
               <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>O</kbd></td><td>切换大纲面板</td></tr>
               <tr><td><kbd>Escape</kbd></td><td>关闭搜索栏</td></tr>
             </table>
@@ -97,7 +99,7 @@
           <span>⭐ 开源免费 · </span>
           <a href="https://github.com/yibanyiban78/markdown-editor" target="_blank" class="welcome-link">GitHub</a>
           <span> · 欢迎 Star ⭐</span>
-          <span class="welcome-version">v1.1.1</span>
+          <span class="welcome-version">v1.1.2</span>
         </div>
       </div>
       <!-- 预览模式：纯预览 -->

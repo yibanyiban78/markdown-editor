@@ -49,6 +49,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       SearchManager.toggleSearch();
       return;
     }
+    const fontShortcut = getFontShortcutDelta(e);
+    if (fontShortcut !== 0) {
+      e.preventDefault();
+      Editor.changeFontSize(fontShortcut);
+      return;
+    }
     if (e.key === 'Escape') {
       SearchManager.hideSearch();
     }
@@ -100,4 +106,11 @@ async function applyAppVersion() {
   } catch {
     // Keep the static fallback title/version if the app version cannot be read.
   }
+}
+
+function getFontShortcutDelta(event) {
+  if (!event.ctrlKey || event.altKey || event.metaKey) return 0;
+  if (event.key === '=' || event.key === '+') return 1;
+  if (event.key === '-') return -1;
+  return 0;
 }

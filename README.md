@@ -93,7 +93,7 @@
 | `*-setup.exe` | **安装版，推荐**：提供安装向导并创建桌面快捷方式 |
 | `*-portable.exe` | **便携版**：无需安装，可直接运行 |
 
-当前稳定版本为 [`v1.1.1`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.1.1)。
+当前稳定版本为 [`v1.1.2`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.1.2)。
 
 ### 从源码运行
 
@@ -137,6 +137,8 @@ npm run dist
 | <kbd>Ctrl</kbd> + <kbd>O</kbd> | 打开文件 |
 | <kbd>Ctrl</kbd> + <kbd>S</kbd> | 保存文件 |
 | <kbd>Ctrl</kbd> + <kbd>F</kbd> | 搜索 |
+| <kbd>Ctrl</kbd> + <kbd>=</kbd> | 放大字体 |
+| <kbd>Ctrl</kbd> + <kbd>-</kbd> | 缩小字体 |
 | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>O</kbd> | 切换大纲面板 |
 | <kbd>Esc</kbd> | 关闭搜索栏 |
 
@@ -245,7 +247,7 @@ Download the latest build from the [Releases page](https://github.com/yibanyiban
 | `*-setup.exe` | **Installer, recommended**: includes a setup wizard and desktop shortcut |
 | `*-portable.exe` | **Portable build**: runs directly without installation |
 
-The current stable version is [`v1.1.1`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.1.1).
+The current stable version is [`v1.1.2`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.1.2).
 
 ### Run from source
 
@@ -289,6 +291,8 @@ Build output is written to `release/`. Release commits and `v*` tags trigger the
 | <kbd>Ctrl</kbd> + <kbd>O</kbd> | Open file |
 | <kbd>Ctrl</kbd> + <kbd>S</kbd> | Save file |
 | <kbd>Ctrl</kbd> + <kbd>F</kbd> | Search |
+| <kbd>Ctrl</kbd> + <kbd>=</kbd> | Increase editor font size |
+| <kbd>Ctrl</kbd> + <kbd>-</kbd> | Decrease editor font size |
 | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>O</kbd> | Toggle the outline panel |
 | <kbd>Esc</kbd> | Close the search bar |
 
