@@ -11,6 +11,9 @@ const UpdateManager = {
     if (!window.electronAPI || !window.electronAPI.onUpdateStatus) return;
     window.electronAPI.onUpdateStatus((state) => this.handleStatus(state));
     window.electronAPI.getUpdateStatus?.().then((state) => this.handleStatus(state));
+    setTimeout(() => {
+      window.electronAPI.getUpdateStatus?.().then((state) => this.handleStatus(state, { replay: true }));
+    }, 12000);
   },
 
   async checkNow() {
@@ -24,7 +27,7 @@ const UpdateManager = {
     this.handleStatus(state);
   },
 
-  handleStatus(state) {
+  handleStatus(state, options = {}) {
     if (!state || !state.status) return;
 
     if (state.status === 'checking') {
@@ -45,7 +48,8 @@ const UpdateManager = {
 
     if (state.status === 'available') {
       const version = state.updateInfo?.version || '新版本';
-      if (!state.manual && this.lastShownVersion === version) return;
+      if (!state.manual && this.lastShownVersion === version && !options.replay) return;
+      if (!state.manual && this.lastShownVersion === version && this.activeDialog) return;
       this.lastShownVersion = version;
       this.showAvailableDialog(state);
       return;

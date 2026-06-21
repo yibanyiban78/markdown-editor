@@ -158,6 +158,13 @@ function setUpdateState(partial) {
   }
 }
 
+function bringWindowToFrontForUpdate() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  if (!mainWindow.isVisible()) mainWindow.show();
+  mainWindow.focus();
+}
+
 function configureAutoUpdates() {
   if (!autoUpdater) {
     setUpdateState({ status: 'unavailable', error: 'Updater module is not installed' });
@@ -183,6 +190,7 @@ function configureAutoUpdates() {
       error: null,
       progress: null
     });
+    if (!updateState.manual) bringWindowToFrontForUpdate();
   });
 
   autoUpdater.on('update-not-available', (info) => {
