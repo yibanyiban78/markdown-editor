@@ -49,6 +49,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       SearchManager.toggleSearch();
       return;
     }
+    if (e.ctrlKey && !e.altKey && !e.metaKey && e.key.toLowerCase() === 'a' &&
+      !e.target.closest?.('input, textarea, select, [contenteditable="true"]')) {
+      const previewId = Editor.currentMode === 'single'
+        ? 'single-preview'
+        : Editor.currentMode === 'split' ? 'preview-pane' : null;
+      const preview = previewId ? document.getElementById(previewId) : null;
+      const selection = document.getSelection();
+      if (preview && selection) {
+        e.preventDefault();
+        const range = document.createRange();
+        range.selectNodeContents(preview);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      return;
+    }
     const fontShortcut = getFontShortcutDelta(e);
     if (fontShortcut !== 0) {
       e.preventDefault();

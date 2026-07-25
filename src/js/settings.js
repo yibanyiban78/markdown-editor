@@ -1,5 +1,5 @@
 const SettingsManager = {
-  outlinePosition: 'right', // 'left' | 'right'
+  outlinePosition: 'left', // 'left' | 'right'
 
   init() {
     // 加载保存的大纲位置
@@ -7,7 +7,7 @@ const SettingsManager = {
     if (saved) {
       try {
         const settings = JSON.parse(saved);
-        this.outlinePosition = settings.outlinePosition || 'right';
+        this.outlinePosition = settings.outlinePosition || 'left';
       } catch(e) {}
     }
     this.applyOutlinePosition();
