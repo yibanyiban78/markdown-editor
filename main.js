@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { pathToFileURL } = require('url');
+const { exportPdfToFile } = require('./src/main/pdf-export');
 
 let autoUpdater = null;
 try {
@@ -438,35 +439,20 @@ ipcMain.handle('export:pdf', async (event, htmlContent) => {
     return { success: false };
   }
 
-  let printWindow;
   try {
     const result = await dialog.showSaveDialog(mainWindow, {
       filters: [{ name: 'PDF', extensions: ['pdf'] }]
     });
     if (result.canceled || !result.filePath) return null;
 
-    printWindow = new BrowserWindow({
-      show: false,
-      webPreferences: {
-        contextIsolation: true,
-        nodeIntegration: false,
-        sandbox: true,
-        javascript: false
-      }
+    await exportPdfToFile({
+      htmlContent,
+      filePath: result.filePath,
+      BrowserWindow
     });
-
-    const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`;
-    await printWindow.loadURL(dataUrl);
-    const pdfData = await printWindow.webContents.printToPDF({
-      printBackground: true,
-      preferCSSPageSize: true
-    });
-    await fs.promises.writeFile(result.filePath, pdfData);
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
-  } finally {
-    if (printWindow && !printWindow.isDestroyed()) printWindow.destroy();
   }
 });
 
