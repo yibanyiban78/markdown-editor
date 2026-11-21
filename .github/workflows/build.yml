@@ -28,15 +28,24 @@ jobs:
         with:
           node-version: 22
 
-      - name: Read package version
+      - name: Read and verify release metadata
         id: package
         shell: pwsh
         run: |
           $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$version") {
+            throw 'Git tag and package version do not match.'
+          }
+          if (-not (Test-Path -LiteralPath ".github/release-notes/v$version.md" -PathType Leaf)) {
+            throw "Release notes for v$version are missing."
+          }
           "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Install dependencies
         run: npm install
+
+      - name: Run regression tests
+        run: npm test
 
       - name: Build with electron-builder
         run: npm run dist
@@ -45,50 +54,12 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            release/*.exe
-            release/*.yml
-            release/*.blockmap
+            release/markdown-editor-setup-${{ steps.package.outputs.version }}.exe
+            release/markdown-editor-portable-${{ steps.package.outputs.version }}.exe
+            release/markdown-editor-setup-${{ steps.package.outputs.version }}.exe.blockmap
+            release/latest.yml
+          fail_on_unmatched_files: true
           tag_name: v${{ steps.package.outputs.version }}
-          generate_release_notes: false
-          body: |
-            ## v${{ steps.package.outputs.version }}
-
-            ### 中文
-
-            此版本修复 PDF 导出在选择保存路径后未生成文件的问题，并完成 HTML/PDF 实际保存验证。
-
-            #### 下载
-
-            | 文件 | 说明 |
-            |------|------|
-            | `*-setup.exe` | **安装版（推荐）**：提供安装向导并创建桌面快捷方式 |
-            | `*-portable.exe` | **便携版**：无需安装，可直接运行 |
-
-            #### 更新亮点
-
-            - PDF 导出改用临时 HTML 文件加载，避开超长 `data:` URL 限制。
-            - 支持包含内嵌字体、KaTeX 和 Mermaid 的较大文档导出。
-            - 导出完成后自动清理临时文件和打印窗口。
-            - 新增大文档 PDF 导出回归测试。
-            - 实际验证 HTML 与 PDF 均可保存并生成有效文件。
-
-            ### English
-
-            This release fixes PDF exports that did not create a file after a save path was selected, with end-to-end HTML and PDF save verification.
-
-            #### Downloads
-
-            | File | Description |
-            |------|-------------|
-            | `*-setup.exe` | **Installer (recommended)**: includes a setup wizard and desktop shortcut |
-            | `*-portable.exe` | **Portable build**: runs directly without installation |
-
-            #### Highlights
-
-            - Load PDF export content from a temporary HTML file instead of a length-limited `data:` URL.
-            - Support larger documents containing embedded fonts, KaTeX, and Mermaid output.
-            - Clean up the temporary file and print window after each export.
-            - Add a regression test for large-document PDF exports.
-            - Verify that both HTML and PDF exports create valid saved files.
+          body_path: .github/release-notes/v${{ steps.package.outputs.version }}.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,5 +1,5 @@
-document.addEventListener('DOMContentLoaded', async () => {
-  await applyAppVersion();
+document.addEventListener('DOMContentLoaded', () => {
+  applyAppVersion();
 
   // Initialize all modules in order
   if (typeof Editor !== 'undefined') Editor.init();

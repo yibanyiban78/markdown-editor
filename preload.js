@@ -9,6 +9,7 @@ function subscribe(channel, callback) {
 
 contextBridge.exposeInMainWorld('electronAPI', {
   openFile: () => ipcRenderer.invoke('dialog:openFile'),
+  decodeText: (bytes) => ipcRenderer.invoke('document:decodeText', bytes),
   saveFile: (data) => ipcRenderer.invoke('dialog:saveFile', data),
   saveDirect: (data) => ipcRenderer.invoke('fs:saveDocument', data),
   exportPDF: (htmlContent) => ipcRenderer.invoke('export:pdf', htmlContent),

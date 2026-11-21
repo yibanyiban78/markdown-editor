@@ -1,4 +1,5 @@
 /* ===== Markdown 渲染样式（预览 + 双栏预览共用） ===== */
+.plain-text { white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 4; }
 #preview-pane, #single-preview { line-height: 1.7; font-size: var(--editor-font-size); color: var(--text-primary); }
 #preview-pane h1, #single-preview h1 { font-size: 2em; font-weight: 700; margin: 0.67em 0; border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em; }
 #preview-pane h2, #single-preview h2 { font-size: 1.5em; font-weight: 700; margin: 0.83em 0; border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em; }

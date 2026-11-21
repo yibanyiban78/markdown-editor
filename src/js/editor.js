@@ -1,8 +1,10 @@
 const Editor = {
   currentMode: 'single',   // 'single' | 'split' | 'source'
+  markdownMode: 'single',
   currentContent: '',
   currentDocumentId: null,
   currentFileName: '',
+  textFormat: null,
   hasOpenDocument: false,
   isDirty: false,
   autoSaveEnabled: true,
@@ -11,6 +13,10 @@ const Editor = {
   documentGeneration: 0,
   scrollRatio: 0,           // 0~1，记录当前滚动比例
   _splitSyncing: false,     // 防止双模同步死循环
+
+  get isPlainText() {
+    return /\.txt$/i.test(this.currentFileName);
+  },
 
   init() {
     this.bindToolbar();
@@ -186,7 +192,7 @@ sequenceDiagram
     this.currentContent = value;
     this.isDirty = true;
     this.revision++;
-    this.updatePreview(value);
+    this.renderPreview('preview-pane', value);
     this.onContentChange();
   },
 
@@ -227,6 +233,7 @@ sequenceDiagram
     this.captureScrollRatio();
 
     this.currentMode = mode;
+    if (!this.isPlainText) this.markdownMode = mode;
 
     ['btn-mode-single', 'btn-mode-split', 'btn-mode-source'].forEach(id => {
       document.getElementById(id).classList.remove('active');
@@ -238,12 +245,12 @@ sequenceDiagram
     });
 
     if (mode === 'single') {
-      this.renderSinglePreview(this.currentContent);
+      this.renderPreview('single-preview', this.currentContent);
       this.applyScrollRatio(document.getElementById('single-preview'));
     } else if (mode === 'split') {
       this.unbindSplitScroll();
       document.getElementById('source-textarea').value = this.currentContent;
-      this.updatePreview(this.currentContent);
+      this.renderPreview('preview-pane', this.currentContent);
       // 双模渲染后同步滚动位置，然后绑定互相同步
       requestAnimationFrame(() => {
         this.syncSplitScrollToRatio();
@@ -314,15 +321,16 @@ sequenceDiagram
 
   // ========== 渲染 ==========
 
-  renderSinglePreview(markdownText) {
-    const pane = document.getElementById('single-preview');
-    if (typeof MarkdownRenderer !== 'undefined') {
-      pane.innerHTML = MarkdownRenderer.render(markdownText || '');
-      MarkdownRenderer.postRender(pane);
+  renderPreview(paneId, content) {
+    const pane = document.getElementById(paneId);
+    pane.classList.toggle('plain-text', this.isPlainText);
+    if (this.isPlainText || typeof MarkdownRenderer === 'undefined') {
+      pane.textContent = content;
     } else {
-      pane.textContent = markdownText || '';
+      pane.innerHTML = MarkdownRenderer.render(content);
+      MarkdownRenderer.postRender(pane);
     }
-    if (SearchManager && SearchManager.searchQuery) {
+    if (typeof SearchManager !== 'undefined' && SearchManager.searchQuery) {
       setTimeout(() => SearchManager.updatePreviewHighlights(), 300);
     }
     if (typeof OutlineManager !== 'undefined') OutlineManager.requestActiveUpdate();
@@ -337,42 +345,44 @@ sequenceDiagram
     return this.currentContent;
   },
 
-  setContent(content, fileName, documentId) {
+  setFileInfo(fileName, documentId, textFormat) {
+    this.currentFileName = fileName || '';
+    this.currentDocumentId = documentId || null;
+    this.textFormat = textFormat || null;
+    document.getElementById('file-name-display').textContent = this.currentFileName;
+    const encoding = document.getElementById('file-encoding');
+    encoding.hidden = !this.isPlainText;
+    const labels = { gbk: 'GBK', 'utf8-bom': 'UTF-8 BOM', utf8: 'UTF-8' };
+    encoding.textContent = labels[textFormat?.encoding] || 'UTF-8';
+    document.getElementById('btn-outline').disabled = this.isPlainText;
+  },
+
+  setContent(content, fileName, documentId, textFormat) {
     clearTimeout(this.autoSaveTimer);
     this.autoSaveTimer = null;
     this.documentGeneration++;
     this.revision++;
     this.currentContent = content || '';
-    this.currentFileName = fileName || '';
-    this.currentDocumentId = documentId || null;
     this.hasOpenDocument = true;
-
-    document.getElementById('file-name-display').textContent = this.currentFileName || '';
+    this.setFileInfo(fileName, documentId, textFormat);
 
     document.getElementById('source-textarea').value = content || '';
     document.getElementById('source-full').value = content || '';
 
-    this.renderSinglePreview(content || '');
-    this.updatePreview(content || '');
     this.isDirty = false;
     this.updateWordCount();
-    if (typeof OutlineManager !== 'undefined') OutlineManager.showForDocument(this.currentContent);
     this.updateWelcomeVisibility();
     this.updateSaveButtonVisibility();
+    this.refreshDocumentViews();
+    if (this.isPlainText) document.getElementById('source-full').focus();
   },
 
-  updatePreview(markdownText) {
-    const previewPane = document.getElementById('preview-pane');
-    if (typeof MarkdownRenderer !== 'undefined') {
-      previewPane.innerHTML = MarkdownRenderer.render(markdownText);
-      MarkdownRenderer.postRender(previewPane);
-    } else {
-      previewPane.textContent = markdownText;
-    }
-    if (SearchManager && SearchManager.searchQuery) {
-      setTimeout(() => SearchManager.updatePreviewHighlights(), 300);
-    }
-    if (typeof OutlineManager !== 'undefined') OutlineManager.requestActiveUpdate();
+  refreshDocumentViews() {
+    this.renderPreview('single-preview', this.currentContent);
+    this.renderPreview('preview-pane', this.currentContent);
+    if (typeof OutlineManager !== 'undefined') OutlineManager.showForDocument(this.currentContent);
+    const mode = this.isPlainText ? 'source' : this.markdownMode;
+    if (mode !== this.currentMode) this.switchMode(mode);
   },
 
   onContentChange() {
@@ -406,14 +416,16 @@ sequenceDiagram
 
     if (result && result.success && isCurrentVersion) {
       this.isDirty = false;
+      this.updateSaveButtonVisibility();
       if (!silent) this.showStatus('已自动保存');
       return true;
     }
 
     if (result && result.success && this.currentDocumentId === documentId) {
       this.scheduleAutoSave();
-    } else if (!silent) {
-      this.showStatus('自动保存失败');
+    } else if (!silent && isCurrentVersion) {
+      document.getElementById('btn-save').style.display = '';
+      this.showStatus(result?.code === 'GBK_UNREPRESENTABLE' ? result.error : '自动保存失败', 8000);
     }
     return false;
   },
@@ -455,38 +467,34 @@ sequenceDiagram
     const result = await window.electronAPI.saveFile({
       content: this.currentContent,
       documentId: this.currentDocumentId,
-      fileName: this.currentFileName
+      fileName: this.currentFileName,
+      textFormat: this.textFormat
     });
 
+    if (generation !== this.documentGeneration) return false;
     if (result && result.success) {
-      this.currentDocumentId = result.documentId;
-      this.currentFileName = result.fileName;
-      document.getElementById('file-name-display').textContent = this.currentFileName;
+      const wasPlainText = this.isPlainText;
+      this.setFileInfo(result.fileName, result.documentId, result.textFormat);
+      if (wasPlainText !== this.isPlainText) this.refreshDocumentViews();
       this.updateSaveButtonVisibility();
-      this.isDirty = this.revision !== revision || this.documentGeneration !== generation;
+      this.isDirty = this.revision !== revision;
       this.showStatus('已保存');
       if (this.isDirty) this.scheduleAutoSave();
       return true;
     }
-    if (result && result.error) this.showStatus('保存失败');
+    if (result && result.error) this.showStatus('保存失败：' + result.error, 8000);
     return false;
   },
 
   async openFile() {
-    const result = await window.electronAPI.openFile();
-    if (!result) return false;
-    if (!await this.prepareToReplaceDocument('打开其他文档')) return false;
-
-    this.setContent(result.content, result.fileName, result.documentId);
-    this.showStatus(`已打开: ${result.fileName}`);
-    return true;
+    return this.openExternalDocument(await window.electronAPI.openFile());
   },
 
   async openExternalDocument(data) {
     if (!data || typeof data.content !== 'string') return false;
     if (!await this.prepareToReplaceDocument('打开其他文档')) return false;
 
-    this.setContent(data.content, data.fileName, data.documentId || null);
+    this.setContent(data.content, data.fileName, data.documentId, data.textFormat);
     this.showStatus(`已打开: ${data.fileName}`);
     return true;
   },
@@ -498,13 +506,16 @@ sequenceDiagram
       return false;
     }
 
-    const content = await file.text();
-    if (!await this.prepareToReplaceDocument('打开拖入的文档')) return false;
-
-    // 拖入文件不授予静默写回权限，首次保存时由系统保存对话框确认目标。
-    this.setContent(content, file.name, null);
-    this.showStatus(`已打开: ${file.name}`);
-    return true;
+    try {
+      const data = /\.txt$/i.test(file.name)
+        ? await window.electronAPI.decodeText(new Uint8Array(await file.arrayBuffer()))
+        : { content: await file.text() };
+      // 拖入文件只传递内容，首次保存时仍由用户选择目标。
+      return data ? this.openExternalDocument({ ...data, fileName: file.name }) : false;
+    } catch {
+      this.showStatus('无法读取拖入的文件');
+      return false;
+    }
   },
 
   updateWordCount() {

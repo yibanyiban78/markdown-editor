@@ -111,11 +111,12 @@ const ExportManager = {
 
   async buildExportDocument() {
     const content = Editor.currentContent || '';
-    if (!content.trim()) return null;
+    if (!content || (!Editor.isPlainText && !content.trim())) return null;
 
-    const rendered = await MarkdownRenderer.renderForExport(content);
+    const plainText = Editor.isPlainText;
+    const rendered = plainText ? this.escapeHtml(content) : await MarkdownRenderer.renderForExport(content);
     const title = this.escapeHtml(Editor.currentFileName || '导出文档');
-    const libraryStyles = await this.collectLibraryStyles();
+    const libraryStyles = plainText ? '' : await this.collectLibraryStyles();
 
     return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -139,6 +140,7 @@ const ExportManager = {
     th, td { border: 1px solid #d0d7de; padding: 6px 12px; text-align: left; }
     blockquote { border-left: 3px solid #0969da; padding-left: 12px; color: #57606a; margin-left: 0; }
     a { color: #0969da; }
+    .plain-text { white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 4; font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif; }
     .task-list-item { list-style: none; }
     .mermaid { text-align: center; break-inside: avoid; }
     .powered-by { margin-top: 40px; padding-top: 16px; border-top: 1px solid #d8dee4; text-align: center; font-size: 12px; color: #6e7781; }
@@ -150,7 +152,7 @@ const ExportManager = {
   </style>
 </head>
 <body>
-  <main>${rendered}</main>
+  <main${plainText ? ' class="plain-text"' : ''}>${rendered}</main>
   <footer class="powered-by">使用极简 Markdown 编辑器制作</footer>
 </body>
 </html>`;

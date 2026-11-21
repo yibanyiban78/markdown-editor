@@ -43,7 +43,7 @@
 |:------------:|:----------------:|
 | ![浅色预览模式](assets/screenshot-preview.png) | ![深色双栏编辑模式](assets/screenshot-split.png) |
 
-按下 <kbd>Ctrl</kbd> + <kbd>O</kbd> 打开 Markdown 文件，即可开始编辑。
+按下 <kbd>Ctrl</kbd> + <kbd>O</kbd> 打开 Markdown 或 TXT 文件。TXT 会直接进入编辑模式，预览和导出保留原文、空格和换行。
 
 ### 功能特性
 
@@ -59,6 +59,7 @@
 #### 文件与数据
 
 - **打开、新建和保存**：支持 `.md`、`.markdown` 和 `.txt` 文件
+- **TXT 编码**：新建 TXT 默认使用 UTF-8，已有文件按原 UTF-8、UTF-8 BOM 或 GBK 编码保存。两种编码均可解读时，可对照中文片段选择。若新增字符超出 GBK 范围，按 <kbd>Ctrl</kbd> + <kbd>S</kbd> 可另存为 UTF-8 副本。
 - **拖放打开**：将文件拖入窗口即可开始编辑
 - **自动保存**：已授权文件在修改 1.5 秒后自动写回，可在设置中关闭
 - **未保存保护**：新建、打开其他文件或关闭窗口前提示保存未提交内容
@@ -90,10 +91,10 @@
 
 | 类型 | 说明 |
 |------|------|
-| `*-setup.exe` | **安装版，推荐**：提供安装向导并创建桌面快捷方式 |
-| `*-portable.exe` | **便携版**：无需安装，可直接运行 |
+| `markdown-editor-setup-1.1.6.exe` | **安装版，推荐**：提供安装向导并创建桌面快捷方式 |
+| `markdown-editor-portable-1.1.6.exe` | **便携版**：无需安装，可直接运行 |
 
-当前稳定版本为 [`v1.1.5`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.1.5)。
+当前稳定版本为 [`v1.1.6`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.1.6)。
 
 ### 从源码运行
 
@@ -197,7 +198,7 @@ markdown-editor/
 |:------------------:|:--------------------:|
 | ![Light preview mode](assets/screenshot-preview.png) | ![Dark split-view mode](assets/screenshot-split.png) |
 
-Press <kbd>Ctrl</kbd> + <kbd>O</kbd> to open a Markdown file and start editing.
+Press <kbd>Ctrl</kbd> + <kbd>O</kbd> to open a Markdown or TXT file. TXT opens for editing, and both preview and export preserve its literal text, spaces, and line breaks.
 
 ### Features
 
@@ -213,6 +214,7 @@ Press <kbd>Ctrl</kbd> + <kbd>O</kbd> to open a Markdown file and start editing.
 #### Files and data
 
 - **Open, create, and save**: supports `.md`, `.markdown`, and `.txt` files
+- **TXT encoding**: new files use UTF-8. Existing files keep their UTF-8, UTF-8 BOM, or GBK encoding. If two readings are possible, choose the correct text from a preview. If an edit exceeds the GBK character set, press <kbd>Ctrl</kbd> + <kbd>S</kbd> to save a UTF-8 copy.
 - **Drag and drop**: drop a file into the window to start editing
 - **Auto-save**: authorized files are saved 1.5 seconds after editing; this can be disabled
 - **Unsaved-change protection**: prompts before creating, opening, or closing over pending work
@@ -244,10 +246,10 @@ Download the latest build from the [Releases page](https://github.com/yibanyiban
 
 | Type | Description |
 |------|-------------|
-| `*-setup.exe` | **Installer, recommended**: includes a setup wizard and desktop shortcut |
-| `*-portable.exe` | **Portable build**: runs directly without installation |
+| `markdown-editor-setup-1.1.6.exe` | **Installer, recommended**: includes a setup wizard and desktop shortcut |
+| `markdown-editor-portable-1.1.6.exe` | **Portable build**: runs directly without installation |
 
-The current stable version is [`v1.1.5`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.1.5).
+The current stable version is [`v1.1.6`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.1.6).
 
 ### Run from source
 

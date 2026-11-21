@@ -45,7 +45,7 @@ const OutlineManager = {
     this.headings = [];
     this.activeHeadingId = null;
 
-    if (!markdownContent) {
+    if (!markdownContent || Editor.isPlainText) {
       this.hide();
       return false;
     }
