@@ -3,6 +3,7 @@ const Editor = {
   markdownMode: 'single',
   currentContent: '',
   currentDocumentId: null,
+  imageDocumentId: null,
   currentFileName: '',
   textFormat: null,
   hasOpenDocument: false,
@@ -327,7 +328,7 @@ sequenceDiagram
     if (this.isPlainText || typeof MarkdownRenderer === 'undefined') {
       pane.textContent = content;
     } else {
-      pane.innerHTML = MarkdownRenderer.render(content);
+      pane.innerHTML = MarkdownRenderer.render(content, this.imageDocumentId);
       MarkdownRenderer.postRender(pane);
     }
     if (typeof SearchManager !== 'undefined' && SearchManager.searchQuery) {
@@ -345,9 +346,10 @@ sequenceDiagram
     return this.currentContent;
   },
 
-  setFileInfo(fileName, documentId, textFormat) {
+  setFileInfo(fileName, documentId, textFormat, droppedImageId) {
     this.currentFileName = fileName || '';
     this.currentDocumentId = documentId || null;
+    this.imageDocumentId = documentId || droppedImageId || null;
     this.textFormat = textFormat || null;
     document.getElementById('file-name-display').textContent = this.currentFileName;
     const encoding = document.getElementById('file-encoding');
@@ -357,14 +359,14 @@ sequenceDiagram
     document.getElementById('btn-outline').disabled = this.isPlainText;
   },
 
-  setContent(content, fileName, documentId, textFormat) {
+  setContent(content, fileName, documentId, textFormat, droppedImageId) {
     clearTimeout(this.autoSaveTimer);
     this.autoSaveTimer = null;
     this.documentGeneration++;
     this.revision++;
     this.currentContent = content || '';
     this.hasOpenDocument = true;
-    this.setFileInfo(fileName, documentId, textFormat);
+    this.setFileInfo(fileName, documentId, textFormat, droppedImageId);
 
     document.getElementById('source-textarea').value = content || '';
     document.getElementById('source-full').value = content || '';
@@ -474,8 +476,9 @@ sequenceDiagram
     if (generation !== this.documentGeneration) return false;
     if (result && result.success) {
       const wasPlainText = this.isPlainText;
+      const previousImageId = this.imageDocumentId;
       this.setFileInfo(result.fileName, result.documentId, result.textFormat);
-      if (wasPlainText !== this.isPlainText) this.refreshDocumentViews();
+      if (wasPlainText !== this.isPlainText || previousImageId !== this.imageDocumentId) this.refreshDocumentViews();
       this.updateSaveButtonVisibility();
       this.isDirty = this.revision !== revision;
       this.showStatus('已保存');
@@ -490,11 +493,13 @@ sequenceDiagram
     return this.openExternalDocument(await window.electronAPI.openFile());
   },
 
-  async openExternalDocument(data) {
+  async openExternalDocument(data, droppedFile) {
     if (!data || typeof data.content !== 'string') return false;
     if (!await this.prepareToReplaceDocument('打开其他文档')) return false;
 
-    this.setContent(data.content, data.fileName, data.documentId, data.textFormat);
+    const imageId = droppedFile && /\.(md|markdown)$/i.test(droppedFile.name)
+      ? await window.electronAPI.droppedImageContext(droppedFile) : null;
+    this.setContent(data.content, data.fileName, data.documentId, data.textFormat, imageId);
     this.showStatus(`已打开: ${data.fileName}`);
     return true;
   },
@@ -510,8 +515,8 @@ sequenceDiagram
       const data = /\.txt$/i.test(file.name)
         ? await window.electronAPI.decodeText(new Uint8Array(await file.arrayBuffer()))
         : { content: await file.text() };
-      // 拖入文件只传递内容，首次保存时仍由用户选择目标。
-      return data ? this.openExternalDocument({ ...data, fileName: file.name }) : false;
+      // 拖入文件可预览同目录图片；首次保存仍由用户选择目标。
+      return data ? await this.openExternalDocument({ ...data, fileName: file.name }, file) : false;
     } catch {
       this.showStatus('无法读取拖入的文件');
       return false;

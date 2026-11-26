@@ -1,5 +1,5 @@
 const MarkdownRenderer = {
-  sanitizeHtml(html, allowGeneratedStyles = false) {
+  sanitizeHtml(html, allowGeneratedStyles = false, imageDocumentId) {
     if (typeof DOMPurify === 'undefined') {
       return this.escapeHtml(html);
     }
@@ -13,8 +13,10 @@ const MarkdownRenderer = {
 
     const cleanHtml = DOMPurify.sanitize(html, options);
 
-    const container = document.createElement('div');
-    container.innerHTML = cleanHtml;
+    // Work in inert template content so intermediate src values never load against the app page.
+    const template = document.createElement('template');
+    template.innerHTML = cleanHtml;
+    const container = template.content;
 
     container.querySelectorAll('a').forEach((link) => {
       const href = link.getAttribute('href') || '';
@@ -35,17 +37,27 @@ const MarkdownRenderer = {
     });
 
     container.querySelectorAll('img').forEach((image) => {
-      const src = image.getAttribute('src') || '';
+      const src = (image.getAttribute('src') || '').trim();
       if (/^\s*(javascript|vbscript):/i.test(src)) {
         image.removeAttribute('src');
+      } else if (imageDocumentId !== undefined && src && !/^(https?:|data:)/i.test(src)) {
+        // Exports retain relative URLs. Live previews use only the context assigned by the main process.
+        const relative = !/^(?:[a-z][\w+.-]*:|[\\/#?])/i.test(src);
+        if (relative && imageDocumentId) {
+          image.setAttribute('src', `md-image://${imageDocumentId}/?${new URLSearchParams({ src })}`);
+        } else {
+          image.removeAttribute('src');
+          image.classList.add('image-load-error');
+          if (relative) image.alt = `[请先保存文档以预览本地图片: ${image.alt || src}]`;
+        }
       }
       image.removeAttribute('srcset');
     });
 
-    return container.innerHTML;
+    return template.innerHTML;
   },
 
-  render(markdownText) {
+  render(markdownText, imageDocumentId) {
     if (!markdownText || markdownText.trim() === '') {
       return '<p class="empty-preview">暂无内容</p>';
     }
@@ -55,13 +67,13 @@ const MarkdownRenderer = {
     }
 
     const parsedHtml = marked.parse(markdownText, { breaks: true, gfm: true });
-    const container = document.createElement('div');
-    container.innerHTML = this.sanitizeHtml(parsedHtml);
+    const template = document.createElement('template');
+    template.innerHTML = this.sanitizeHtml(parsedHtml);
 
-    this.processMath(container);
-    this.processCodeBlocks(container);
+    this.processMath(template.content);
+    this.processCodeBlocks(template.content);
 
-    return this.sanitizeHtml(container.innerHTML, true);
+    return this.sanitizeHtml(template.innerHTML, true, imageDocumentId);
   },
 
   processMath(container) {

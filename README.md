@@ -54,6 +54,7 @@
 - **语法高亮**：基于 highlight.js，支持多种编程语言
 - **数学公式**：通过 KaTeX 支持行内公式 `$...$` 和块级公式 `$$...$$`
 - **图表渲染**：通过 Mermaid 支持流程图、时序图和甘特图等
+- **本地图片**：单栏和双栏预览都按当前 Markdown 文档的位置解析图片，例如 `![封面](./images/cover.webp)`。支持同目录及子目录的 JPG/JPEG、PNG、WebP；新建文档首次保存后生效。
 - **同步滚动**：双栏模式下源码与预览同步浏览
 
 #### 文件与数据
@@ -91,10 +92,10 @@
 
 | 类型 | 说明 |
 |------|------|
-| `markdown-editor-setup-1.1.6.exe` | **安装版，推荐**：提供安装向导并创建桌面快捷方式 |
-| `markdown-editor-portable-1.1.6.exe` | **便携版**：无需安装，可直接运行 |
+| `markdown-editor-setup-1.1.7.exe` | **安装版，推荐**：提供安装向导并创建桌面快捷方式 |
+| `markdown-editor-portable-1.1.7.exe` | **便携版**：无需安装，可直接运行 |
 
-当前稳定版本为 [`v1.1.6`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.1.6)。
+当前稳定版本为 [`v1.1.7`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.1.7)。
 
 ### 从源码运行
 
@@ -209,6 +210,7 @@ Press <kbd>Ctrl</kbd> + <kbd>O</kbd> to open a Markdown or TXT file. TXT opens f
 - **Syntax highlighting**: powered by highlight.js with support for many languages
 - **Math expressions**: KaTeX support for inline `$...$` and display `$$...$$` formulas
 - **Diagrams**: Mermaid support for flowcharts, sequence diagrams, Gantt charts, and more
+- **Local images**: both preview modes resolve JPG/JPEG, PNG, and WebP references relative to the Markdown document, e.g. `![Cover](./images/cover.webp)`. Keep images in the document folder or its subfolders; save a new document first.
 - **Synchronized scrolling**: source and preview panes stay aligned in split view
 
 #### Files and data
@@ -246,10 +248,10 @@ Download the latest build from the [Releases page](https://github.com/yibanyiban
 
 | Type | Description |
 |------|-------------|
-| `markdown-editor-setup-1.1.6.exe` | **Installer, recommended**: includes a setup wizard and desktop shortcut |
-| `markdown-editor-portable-1.1.6.exe` | **Portable build**: runs directly without installation |
+| `markdown-editor-setup-1.1.7.exe` | **Installer, recommended**: includes a setup wizard and desktop shortcut |
+| `markdown-editor-portable-1.1.7.exe` | **Portable build**: runs directly without installation |
 
-The current stable version is [`v1.1.6`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.1.6).
+The current stable version is [`v1.1.7`](https://github.com/yibanyiban78/markdown-editor/releases/tag/v1.1.7).
 
 ### Run from source
 

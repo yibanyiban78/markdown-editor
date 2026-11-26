@@ -62,7 +62,7 @@ async function documentCommands(dialog) {
       maximize() {}
       loadFile() {}
     },
-    Menu: { setApplicationMenu() {} }, dialog,
+    Menu: { setApplicationMenu() {} }, protocol: { handle() {} }, dialog,
     ipcMain: { handle: (name, handler) => handlers.set(name, handler), on() {} }
   };
   const entry = path.join(__dirname, '..', 'main.js');

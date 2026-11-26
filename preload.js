@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 function subscribe(channel, callback) {
   if (typeof callback !== 'function') return () => {};
@@ -9,6 +9,10 @@ function subscribe(channel, callback) {
 
 contextBridge.exposeInMainWorld('electronAPI', {
   openFile: () => ipcRenderer.invoke('dialog:openFile'),
+  droppedImageContext: (file) => {
+    const location = webUtils.getPathForFile(file);
+    return location ? ipcRenderer.invoke('document:droppedImageContext', location) : null;
+  },
   decodeText: (bytes) => ipcRenderer.invoke('document:decodeText', bytes),
   saveFile: (data) => ipcRenderer.invoke('dialog:saveFile', data),
   saveDirect: (data) => ipcRenderer.invoke('fs:saveDocument', data),

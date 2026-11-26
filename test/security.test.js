@@ -17,6 +17,7 @@ function createRenderer() {
     document: dom.window.document,
     NodeFilter: dom.window.NodeFilter,
     DOMPurify: createDOMPurify(dom.window),
+    URLSearchParams: dom.window.URLSearchParams,
     marked: markedPackage.marked,
     katex,
     crypto: webcrypto,
@@ -46,6 +47,27 @@ test('Markdown HTML is sanitized before preview insertion', () => {
   assert.doesNotMatch(html, /<script|<iframe|onerror|href="javascript:/i);
   assert.match(html, /href="https:\/\/example\.com"/);
   assert.match(html, /rel="noopener noreferrer"/);
+});
+
+test('only live local image previews use a document context; remote, embedded and exported URLs stay intact', () => {
+  const { renderer, document } = createRenderer();
+  const pane = document.createElement('div');
+  const local = './images/cover.jpg';
+  const remote = 'https://example.com/cover.webp';
+  const embedded = 'data:image/png;base64,AA==';
+  const doc = [local, remote, embedded].map(src => `![cover](${src})`).join('\n\n');
+  function sources(context) {
+    pane.innerHTML = renderer.render(doc, context);
+    return [...pane.querySelectorAll('img')].map(img => img.getAttribute('src'));
+  }
+  assert.deepEqual(sources(null), [null, remote, embedded]);
+  assert.deepEqual(sources(undefined), [local, remote, embedded]);
+  const [resolved, ...others] = sources('opened');
+  const url = new URL(resolved);
+  assert.equal(url.protocol, 'md-image:');
+  assert.equal(url.hostname, 'opened');
+  assert.equal(url.searchParams.get('src'), local);
+  assert.deepEqual(others, [remote, embedded]);
 });
 
 test('Math rendering skips code spans and code blocks', () => {

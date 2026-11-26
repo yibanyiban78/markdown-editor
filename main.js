@@ -1,4 +1,5 @@
-const { app, BrowserWindow, dialog, ipcMain, Menu, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, protocol, shell } = require('electron');
+const { documentImageResponse } = require('./src/main/document-image');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -20,6 +21,8 @@ const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 const documents = new Map();
 const pendingWrites = new Map();
 
+// Dropping a file grants image preview only, not permission to auto-save to it.
+let droppedImageDocument = null;
 let mainWindow;
 let pendingFilePath = null;
 let allowWindowClose = false;
@@ -344,6 +347,7 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
     documents.clear();
+    droppedImageDocument = null;
   });
 }
 
@@ -361,6 +365,8 @@ if (!gotSingleInstanceLock) {
   });
 
   app.whenReady().then(() => {
+    protocol.handle('md-image', request => documentImageResponse(request, id =>
+      droppedImageDocument?.id === id ? droppedImageDocument.location : documents.get(id)?.filePath));
     pendingFilePath = getFilePathFromArgv();
     configureAutoUpdates();
     createWindow();
@@ -401,6 +407,13 @@ ipcMain.handle('dialog:openFile', async (event) => {
     dialog.showErrorBox('无法打开文件', error.message);
     return null;
   }
+});
+
+ipcMain.handle('document:droppedImageContext', (event, location) => {
+  if (!isTrustedSender(event) || typeof location !== 'string' || !path.isAbsolute(location) ||
+      !/\.(md|markdown)$/i.test(location)) return null;
+  droppedImageDocument = { id: crypto.randomUUID(), location };
+  return droppedImageDocument.id;
 });
 
 ipcMain.handle('document:decodeText', async (event, bytes) => {
